@@ -13,7 +13,7 @@ jobs:
       id: build
     - id: run-help
       run: |
-        sudo snap install --dangerous ${{ steps.build.outputs.snap }}
+        sudo snap install --devmode --dangerous ${{ steps.build.outputs.snap }}
         buck --help
     - id: publish
       if: ${{ github.event_name == 'push' }}

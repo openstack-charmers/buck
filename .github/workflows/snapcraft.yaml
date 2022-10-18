@@ -18,8 +18,10 @@ jobs:
     - id: publish
       if: ${{ github.event_name == 'push' }}
       uses: snapcore/action-publish@v1
-      with:
+      env:
         # See: https://github.com/snapcore/action-publish#store-login
-        store_login: ${{ secrets.STORE_LOGIN }}
+        # $ snapcraft export-login --channels edge --snaps=buck --acls package_access,package_push,package_update,package_release,package_access -
+        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+      with:
         snap: ${{ steps.build.outputs.snap }}
         release: edge

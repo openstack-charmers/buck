@@ -8,6 +8,15 @@ description: |
 grade: devel # must be 'stable' to release into candidate/stable channels
 confinement: devmode # use 'strict' once you have the right plugs and slots
 
+apps:
+  buck:
+    command: bin/buck
+    environment:
+      PYTHONPATH: "$SNAP/lib/python3.8/site-packages/"
+    plugs:
+      - network
+      - home
+
 parts:
   buck:
     plugin: python

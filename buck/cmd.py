@@ -1,4 +1,6 @@
 import os
+import subprocess
+
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 __THIS__ = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +22,15 @@ def main():
     )
 
     for in_file, out_file in KNOWN_FILES:
+
+        result = subprocess.run(['git', 'ls-files', '--error-unmatch',
+                                 out_file], check=False,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+        if result.returncode == 0:
+            # the file is tracked by git, so we skip overriding it.
+            print(f'Skipping {out_file}, reason: tracked by git')
+            continue
 
         print(f'Using {in_file} template')
         template = env.get_template(in_file)

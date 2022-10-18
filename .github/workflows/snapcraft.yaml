@@ -1,0 +1,25 @@
+name: Snapcraft
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: snapcore/action-build@v1
+      id: build
+    - id: run-help
+      run: |
+        sudo snap install --dangerous ${{ steps.build.outputs.snap }}
+        buck --help
+    - id: publish
+      if: ${{ github.event_name == 'push' }}
+      uses: snapcore/action-publish@v1
+      with:
+        # See: https://github.com/snapcore/action-publish#store-login
+        store_login: ${{ secrets.STORE_LOGIN }}
+        snap: ${{ steps.build.outputs.snap }}
+        release: edge

@@ -1,3 +1,4 @@
+import argparse
 import os
 import subprocess
 
@@ -15,7 +16,17 @@ OPENSTACK_INFO = {
     'origin': 'zed'
 }
 
-def main():
+def setup_opts():
+    parser = argparse.ArgumentParser(description='buck automation.')
+    subparsers = parser.add_subparsers(title='subcommands', required=True,
+                                       dest='cmd')
+    up = subparsers.add_parser('up')
+    up.set_defaults(func=cmd_up)
+
+    return parser.parse_args()
+
+
+def cmd_up(args):
     env = Environment(
         loader=FileSystemLoader(["./", os.path.join(__THIS__, 'templates')]),
         autoescape=select_autoescape()
@@ -42,3 +53,7 @@ def main():
             result.dump(f)
             f.write('\n')
         print('done')
+
+def main():
+    args = setup_opts()
+    args.func(args)

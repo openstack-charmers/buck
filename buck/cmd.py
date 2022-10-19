@@ -27,15 +27,16 @@ def setup_opts():
 
 
 def cmd_up(args):
+    cwd = os.getcwd()
     env = Environment(
-        loader=FileSystemLoader(["./", os.path.join(__THIS__, 'templates')]),
+        loader=FileSystemLoader([cwd, os.path.join(__THIS__, 'templates')]),
         autoescape=select_autoescape()
     )
-
+    print('CWD', cwd)
     for in_file, out_file in KNOWN_FILES:
 
         result = subprocess.run(['git', 'ls-files', '--error-unmatch',
-                                 out_file], check=False,
+                                 os.path.join(cwd, out_file)], check=False,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
         if result.returncode == 0:

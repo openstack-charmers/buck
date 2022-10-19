@@ -21,5 +21,5 @@ parts:
   buck:
     plugin: python
     source: './'
-  stage-packages:
-    - git
+    stage-packages:
+      - git

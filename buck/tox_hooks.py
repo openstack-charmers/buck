@@ -1,7 +1,11 @@
 import copy
 import os
+from typing import List, Set
 from tox import hookimpl
 from tox.config import DepOption, ParseIni, SectionReader, testenvprefix
+
+
+__THIS__ = os.path.dirname(os.path.abspath(__file__))
 
 
 passenv_list = (
@@ -22,8 +26,33 @@ class BaseCase(object):
         self._config = config
 
     @property
-    def working_dir(self):
+    def toxinidir(self):
         return self._config.toxinidir
+
+    @property
+    def setenv(self):
+        return {}
+
+
+class ToxCoverCase(BaseCase):
+    name = 'cover'
+    description = 'Auto-generated cover case'
+
+    @property
+    def commands(self) -> List[List[str]]:
+        return [[os.path.join(__THIS__, 'tools/cover.sh')]]
+
+    @property
+    def setenv(self):
+        return {"PYTHON": "coverage run"}
+
+    @property
+    def dependencies(self) -> Set[str]:
+        return set(['coverage',
+                    'stestr',
+                    f'-r{self.toxinidir}/requirements.txt',
+                    f'-r{self.toxinidir}/test-requirements.txt',
+                    ])
 
 
 class ToxLintCase(BaseCase):
@@ -53,7 +82,7 @@ class ToxPy3Case(BaseCase):
     @property
     def dependencies(self):
         return set(
-            ["-r{toxinidir}/test-requirements.txt".format(toxinidir=self.working_dir),
+            [f"-r{self.toxinidir}/test-requirements.txt",
              "stestr"])
 
 
@@ -189,6 +218,9 @@ class Tox(object):
 
         config.basepython = tox_case.basepython
         config.commands = tox_case.commands
+        if tox_case.setenv:
+            for key, value in tox_case.setenv.items():
+                config.setenv[key] = value
 
         if hasattr(config, "whitelist_externals"):
             allowlist = "whitelist_externals"
@@ -209,6 +241,7 @@ def tox_configure(config):
                  ToxPy3Case(config),
                  ToxPy310Case(config),
                  ToxCharmcraftBuildCase(config),
+                 ToxCoverCase(config),
                  ]
 
     # Add them to the envconfig list before testing for explicit calls, because

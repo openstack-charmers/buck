@@ -1,4 +1,6 @@
 import argparse
+import configparser
+import copy
 import os
 import subprocess
 
@@ -15,6 +17,18 @@ KNOWN_FILES = [
 OPENSTACK_INFO = {
     'origin': 'zed'
 }
+
+
+def read_gitreview():
+    cwd = os.getcwd()
+    gitreview_path = os.path.join(cwd, '.gitreview')
+    if not os.path.isfile(gitreview_path):
+        return None
+
+    config = configparser.ConfigParser()
+    config.read(gitreview_path)
+    return config
+
 
 def setup_opts():
     parser = argparse.ArgumentParser(description='buck automation.')
@@ -47,13 +61,21 @@ def cmd_up(args):
         print(f'Using {in_file} template')
         template = env.get_template(in_file)
 
-        result = template.stream({'openstack': OPENSTACK_INFO})
+        os_info = copy.deepcopy(OPENSTACK_INFO)
+        gitreview = read_gitreview()
+        try:
+            os_info['origin'] = gitreview['gerrit']['defaultbranch'].split('/')[-1]
+        except:
+            raise
+        result = template.stream({'openstack': os_info,
+                                  'gitreview': gitreview})
 
         print(f'Writing {out_file}...', end='')
         with open(out_file, 'w') as f:
             result.dump(f)
             f.write('\n')
         print('done')
+
 
 def main():
     args = setup_opts()

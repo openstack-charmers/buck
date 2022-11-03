@@ -12,3 +12,7 @@ class TestTox(unittest.TestCase):
     def test_get_reader(self):
         tox = tox_hooks.Tox(self.config)
         reader = tox.get_reader('tox')
+
+    def test_add_envconfigs(self):
+        tox = tox_hooks.Tox(self.config)
+        tox.add_envconfigs([])

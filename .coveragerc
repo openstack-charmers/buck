@@ -1,0 +1,8 @@
+[run]
+branch = True
+concurrency = multiprocessing
+parallel = True
+source =
+    buck/
+omit =
+    .tox/*

@@ -9,9 +9,7 @@ __THIS__ = os.path.dirname(os.path.abspath(__file__))
 
 
 passenv_list = (
-    # ansible-test does not work without HOME directory
     "HOME",
-    # both ansible-test and molecule may fail to run if these are not passed:
     "OS_*",
     "TEST_*",
     "no_proxy", "http_proxy", "https_proxy",

@@ -1,7 +1,7 @@
 Buck
 ====
 
-|snapcraft-badge|
+|snapcraft-badge| |check-badge|
 
 Buck is a tox plugin to provide sane targets (and highly opinionated) to
 Charmed OpenStack charms.
@@ -80,3 +80,4 @@ License
 
 
 .. |snapcraft-badge| image:: https://github.com/freyes/buck/actions/workflows/snapcraft.yaml/badge.svg
+.. |check-badge| image:: https://github.com/freyes/buck/actions/workflows/check.yaml/badge.svg

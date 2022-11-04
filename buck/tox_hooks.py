@@ -1,9 +1,10 @@
 import copy
 import os
-import yaml
 from typing import List, Set
 from tox import hookimpl
 from tox.config import DepOption, ParseIni, SectionReader, testenvprefix
+
+import buck.utils as utils
 
 __THIS__ = os.path.dirname(os.path.abspath(__file__))
 
@@ -16,8 +17,6 @@ passenv_list = (
     "JUJU_REPOSITORY",
 )
 
-K8S = 'k8s'
-UNKNOWN = 'UNKNOWN'
 
 class BaseCase(object):
     basepython = 'python3'
@@ -298,32 +297,6 @@ class Tox(object):
             config.allowlist_externals = ["{toxinidir}/rename.sh",
                                           "charmcraft"]
 
-def get_metadata_file():
-    with open('metadata.yaml', 'r') as f:
-        contents = yaml.load(f, Loader=yaml.SafeLoader)
-    return contents
-
-def get_gitreview_file():
-    with open('.gitreview', 'r') as f:
-        contents = f.readlines()
-    return contents
-
-def get_gitreview_line(key):
-    for line in get_gitreview_file():
-        if line.split('=')[0] == key:
-            return line.split('=')[1].rstrip()
-
-def is_k8s_charm():
-    metadata = get_metadata_file()
-    return metadata and 'containers' in metadata.keys()
-
-def get_charm_type():
-    if is_k8s_charm():
-        return K8S
-    return UNKNOWN
-
-def get_branch_name():
-    return get_gitreview_line('defaultbranch') or UNKNOWN
 
 @hookimpl
 def tox_configure(config):
@@ -331,12 +304,12 @@ def tox_configure(config):
     tox = Tox(config)
 
     all_tox_cases = {
-        K8S: {
+        utils.K8S: {
             'main': [
                 ToxCharmcraftBuildCase(config),
                 ToxK8SLintCase(config),
                 ToxK8SFMTCase(config)],
-        UNKNOWN: {
+        utils.UNKNOWN: {
             'main': [
                 ToxLintCase(config),
                 ToxPy3Case(config),
@@ -344,7 +317,7 @@ def tox_configure(config):
                 ToxCharmcraftBuildCase(config),
                 ToxCoverCase(config)]}}}
 
-    tox_cases = all_tox_cases[get_charm_type()][get_branch_name()]
+    tox_cases = all_tox_cases[utils.get_charm_type()][utils.get_branch_name()]
 
     # Add them to the envconfig list before testing for explicit calls, because
     # we want the user to be able to specifically state an auto-generated

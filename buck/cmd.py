@@ -1,9 +1,9 @@
 import argparse
-import configparser
 import copy
 import os
 import subprocess
 
+import utils
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 __THIS__ = os.path.dirname(os.path.abspath(__file__))
@@ -17,17 +17,6 @@ KNOWN_FILES = [
 OPENSTACK_INFO = {
     'origin': 'zed'
 }
-
-
-def read_gitreview():
-    cwd = os.getcwd()
-    gitreview_path = os.path.join(cwd, '.gitreview')
-    if not os.path.isfile(gitreview_path):
-        return None
-
-    config = configparser.ConfigParser()
-    config.read(gitreview_path)
-    return config
 
 
 def setup_opts():
@@ -62,7 +51,7 @@ def cmd_up(args):
         template = env.get_template(in_file)
 
         os_info = copy.deepcopy(OPENSTACK_INFO)
-        gitreview = read_gitreview()
+        gitreview = utils.read_gitreview()
         try:
             os_info['origin'] = gitreview['gerrit']['defaultbranch'].split('/')[-1]
         except:

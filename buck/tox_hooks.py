@@ -1,5 +1,6 @@
 import copy
 import os
+import yaml
 from typing import List, Set
 from tox import hookimpl
 from tox.config import DepOption, ParseIni, SectionReader, testenvprefix
@@ -297,6 +298,11 @@ class Tox(object):
             config.allowlist_externals = ["{toxinidir}/rename.sh",
                                           "charmcraft"]
 
+def get_metadata_file():
+    with open('metadata.yaml', 'r') as f:
+        contents = yaml.load(f, Loader=yaml.SafeLoader)
+    return contents
+
 def get_gitreview_file():
     with open('.gitreview', 'r') as f:
         contents = f.readlines()
@@ -308,9 +314,8 @@ def get_gitreview_line(key):
             return line.split('=')[1].rstrip()
 
 def is_k8s_charm():
-    gitreview = get_gitreview_line('project')
-    # There is probably a better way to do this.
-    return gitreview and 'k8s' in gitreview
+    metadata = get_metadata_file()
+    return metadata and 'containers' in metadata.keys()
 
 def get_charm_type():
     if is_k8s_charm():

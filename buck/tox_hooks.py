@@ -4,7 +4,6 @@ from typing import List, Set
 from tox import hookimpl
 from tox.config import DepOption, ParseIni, SectionReader, testenvprefix
 
-
 __THIS__ = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -16,6 +15,8 @@ passenv_list = (
     "JUJU_REPOSITORY",
 )
 
+K8S = 'k8s'
+UNKNOWN = 'UNKNOWN'
 
 class BaseCase(object):
     basepython = 'python3'
@@ -66,6 +67,73 @@ class ToxLintCase(BaseCase):
     @property
     def dependencies(self):
         return set(["flake8"])
+
+
+class K8SBaseCase(BaseCase):
+
+    @property
+    def pyproject(self):
+        return f"{self.toxinidir}/pyproject.toml"
+
+    @property
+    def target_dirs(self):
+        return [f"{self.toxinidir}/src/", f"{self.toxinidir}/tests/"]
+
+    @property
+    def lib_dir(self):
+        return f"{self.toxinidir}/lib/"
+
+
+class ToxK8SLintCase(K8SBaseCase):
+    name = 'pep8'
+    description = 'Auto-generated lint case'
+
+
+    @property
+    def commands(self):
+        return [
+            ["codespell"] + self.target_dirs,
+            ["pflake8", "--exclude", f"{self.lib_dir}", "--config",
+             f"{self.pyproject}"] + self.target_dirs,
+            ["isort", "--check-only", "--diff", "--skip-glob",
+             f"{self.toxinidir}/lib/"] + self.target_dirs,
+            ["black", "--config", f"{self.pyproject}", "--check", "--diff",
+             "--exclude", f"{self.lib_dir}"] + self.target_dirs,
+        ]
+
+    @property
+    def dependencies(self):
+        return set([
+            "black",
+            "flake8",
+            "flake8-docstrings",
+            "flake8-copyright",
+            "flake8-builtins",
+            "pyproject-flake8",
+            "pep8-naming",
+            "isort",
+            "codespell"])
+
+
+class ToxK8SFMTCase(K8SBaseCase):
+    name = 'fmt'
+    description = 'Auto-generated fmt case'
+
+    @property
+    def commands(self):
+        return [
+            ["isort", "--skip-glob",
+             f"{self.toxinidir}/lib/"] + self.target_dirs,
+            ["black", "--config", f"{self.pyproject}",
+             "--exclude", f"{self.lib_dir}"] + self.target_dirs,
+        ]
+
+    @property
+    def dependencies(self):
+        return set([
+            "black",
+            "isort"])
+
 
 
 class ToxPy3Case(BaseCase):
@@ -229,18 +297,49 @@ class Tox(object):
             config.allowlist_externals = ["{toxinidir}/rename.sh",
                                           "charmcraft"]
 
+def get_gitreview_file():
+    with open('.gitreview', 'r') as f:
+        contents = f.readlines()
+    return contents
+
+def get_gitreview_line(key):
+    for line in get_gitreview_file():
+        if line.split('=')[0] == key:
+            return line.split('=')[1].rstrip()
+
+def is_k8s_charm():
+    gitreview = get_gitreview_line('project')
+    # There is probably a better way to do this.
+    return gitreview and 'k8s' in gitreview
+
+def get_charm_type():
+    if is_k8s_charm():
+        return K8S
+    return UNKNOWN
+
+def get_branch_name():
+    return get_gitreview_line('defaultbranch') or UNKNOWN
 
 @hookimpl
 def tox_configure(config):
 
     tox = Tox(config)
 
-    tox_cases = [ToxLintCase(config),
-                 ToxPy3Case(config),
-                 ToxPy310Case(config),
-                 ToxCharmcraftBuildCase(config),
-                 ToxCoverCase(config),
-                 ]
+    all_tox_cases = {
+        K8S: {
+            'main': [
+                ToxCharmcraftBuildCase(config),
+                ToxK8SLintCase(config),
+                ToxK8SFMTCase(config)],
+        UNKNOWN: {
+            'main': [
+                ToxLintCase(config),
+                ToxPy3Case(config),
+                ToxPy310Case(config),
+                ToxCharmcraftBuildCase(config),
+                ToxCoverCase(config)]}}}
+
+    tox_cases = all_tox_cases[get_charm_type()][get_branch_name()]
 
     # Add them to the envconfig list before testing for explicit calls, because
     # we want the user to be able to specifically state an auto-generated

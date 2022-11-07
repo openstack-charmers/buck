@@ -3,7 +3,7 @@ import copy
 import os
 import subprocess
 
-import utils
+from buck import utils
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 __THIS__ = os.path.dirname(os.path.abspath(__file__))

@@ -88,7 +88,6 @@ class ToxK8SLintCase(K8SBaseCase):
     name = 'pep8'
     description = 'Auto-generated lint case'
 
-
     @property
     def commands(self):
         return [
@@ -133,7 +132,6 @@ class ToxK8SFMTCase(K8SBaseCase):
         return set([
             "black",
             "isort"])
-
 
 
 class ToxPy3Case(BaseCase):
@@ -199,7 +197,8 @@ class Tox(object):
         None"""
         # pylint: disable=protected-access
         reader = SectionReader(section, self.config._cfg, prefix=prefix)
-        distshare_default = os.path.join(str(self.config.homedir), ".tox", "distshare")
+        distshare_default = os.path.join(str(self.config.homedir),
+                                         ".tox", "distshare")
         reader.addsubstitutions(
             toxinidir=self.config.toxinidir,
             homedir=self.config.homedir,
@@ -220,7 +219,7 @@ class Tox(object):
 
     @property
     def toxinidir(self):
-        """Returns the configured toxinidir for working with base directory paths"""
+        """Returns the configured toxinidir for working with base directory"""
         return self.config.toxinidir
 
     @property
@@ -238,10 +237,12 @@ class Tox(object):
         from"""
         # Stripped down version of parseini.__init__ for making a generated
         # envconfig
-        prefix = "tox" if self.config.toxinipath.basename == "setup.cfg" else None
+        if self.config.toxinipath.basename == "setup.cfg":
+            prefix = "tox"
+        else:
+            prefix = None
         reader = self.get_reader("tox", prefix=prefix)
         make_envconfig = ParseIni.make_envconfig
-        skip_install = False
         # Python 2 fix
         make_envconfig = getattr(make_envconfig, "__func__", make_envconfig)
 
@@ -303,19 +304,25 @@ def tox_configure(config):
 
     tox = Tox(config)
 
+    # map of tox cases based on the charm type and the branch
+    # {<charm_type>: {<git_branch>: [<list of cases>] } }
     all_tox_cases = {
         utils.K8S: {
             'main': [
                 ToxCharmcraftBuildCase(config),
                 ToxK8SLintCase(config),
-                ToxK8SFMTCase(config)],
+                ToxK8SFMTCase(config),
+            ],
+        },
         utils.UNKNOWN: {
             'main': [
                 ToxLintCase(config),
                 ToxPy3Case(config),
                 ToxPy310Case(config),
                 ToxCharmcraftBuildCase(config),
-                ToxCoverCase(config)]}}}
+                ToxCoverCase(config)],
+        },
+    }
 
     tox_cases = all_tox_cases[utils.get_charm_type()][utils.get_branch_name()]
 

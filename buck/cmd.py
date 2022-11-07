@@ -1,5 +1,6 @@
 import argparse
 import copy
+import logging
 import os
 import subprocess
 
@@ -7,7 +8,7 @@ from buck import utils
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 __THIS__ = os.path.dirname(os.path.abspath(__file__))
-
+LOG = logging.getLogger(__name__)
 KNOWN_FILES = [
     # relative to the toplevel directory of the git repo.
     ('src/config.yaml.j2', 'src/config.yaml'),
@@ -53,9 +54,14 @@ def cmd_up(args):
         os_info = copy.deepcopy(OPENSTACK_INFO)
         gitreview = utils.read_gitreview()
         try:
-            os_info['origin'] = gitreview['gerrit']['defaultbranch'].split('/')[-1]
-        except:
-            raise
+            defaultbranch = gitreview['gerrit']['defaultbranch']
+            os_info['origin'] = defaultbranch.split('/')[-1]
+        except Exception as ex:
+            LOG.debug(str(ex))
+            LOG.info(('defaultbranch is not set in .gitreview file, '
+                      'falling back to %s'), utils.DEFAULT_BRANCH)
+            os_info['origin'] = utils.DEFAULT_BRANCH
+
         result = template.stream({'openstack': os_info,
                                   'gitreview': gitreview})
 

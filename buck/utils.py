@@ -4,6 +4,8 @@ import yaml
 
 K8S = 'k8s'
 UNKNOWN = 'UNKNOWN'
+DEFAULT_BRANCH = 'master'  # Charmed OpenStack hasn't migrated to 'main'.
+
 
 def read_gitreview():
     cwd = os.getcwd()
@@ -15,22 +17,27 @@ def read_gitreview():
     config.read(gitreview_path)
     return config
 
+
 def read_metadata_file():
     with open('metadata.yaml', 'r') as f:
         contents = yaml.load(f, Loader=yaml.SafeLoader)
     return contents
 
+
 def get_gitreview_line(key):
     return read_gitreview()['gerrit'][key]
+
 
 def is_k8s_charm():
     metadata = read_metadata_file()
     return metadata and 'containers' in metadata.keys()
 
+
 def get_charm_type():
     if is_k8s_charm():
         return K8S
     return UNKNOWN
+
 
 def get_branch_name():
     return get_gitreview_line('defaultbranch') or UNKNOWN

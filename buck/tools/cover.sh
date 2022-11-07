@@ -30,6 +30,12 @@ fi
 # Checkout master and save coverage report
 git checkout HEAD^
 
+# trap ctrl-c and call ctrl_c() which restores the branch.
+trap ctrl_c INT
+function ctrl_c() {
+        git checkout -
+}
+
 # base_op_count=`grep "op\." -R magnum/db/sqlalchemy/alembic/versions/ | wc -l`
 base_op_count=0
 baseline_report=$(mktemp -t buck_coverage-baseline-XXXXXXX)
@@ -44,6 +50,7 @@ coverage xml -o cover-master/coverage.xml
 
 # Checkout back and save coverage report
 git checkout -
+trap - INT  # no need to restore git branch from here onwards.
 
 # current_op_count=`grep "op\." -R magnum/db/sqlalchemy/alembic/versions/ | wc -l`
 current_op_count=0

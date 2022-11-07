@@ -73,6 +73,14 @@ discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
 
+Why 'Buck'?
+-----------
+
+- After many executions of ``petname`` this animal standed out.
+- Buck is the `male form of an Antelope <https://en.wikipedia.org/wiki/List_of_animal_names>`.
+- Antelope was the development cycle of OpenStack when this project started.
+- 'buck up' means `'to raise the morale of' <https://www.merriam-webster.com/dictionary/buck%20up>`.
+
 License
 -------
 

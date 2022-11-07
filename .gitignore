@@ -8,3 +8,5 @@ ChangeLog
 build/
 *.snap
 dist/
+.stestr/
+cover/

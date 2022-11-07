@@ -32,7 +32,7 @@ git checkout HEAD^
 
 # base_op_count=`grep "op\." -R magnum/db/sqlalchemy/alembic/versions/ | wc -l`
 base_op_count=0
-baseline_report=$(mktemp -t buck_coverageXXXXXXX)
+baseline_report=$(mktemp -t buck_coverage-baseline-XXXXXXX)
 coverage erase
 find . -type f -name "*.pyc" -delete
 stestr run --no-subunit-trace $*
@@ -47,7 +47,7 @@ git checkout -
 
 # current_op_count=`grep "op\." -R magnum/db/sqlalchemy/alembic/versions/ | wc -l`
 current_op_count=0
-current_report=$(mktemp -t buck_coverageXXXXXXX)
+current_report=$(mktemp -t buck_coverage-current-XXXXXXX)
 coverage erase
 find . -type f -name "*.pyc" -delete
 stestr run --no-subunit-trace $*

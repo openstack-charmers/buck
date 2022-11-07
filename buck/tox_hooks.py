@@ -4,6 +4,7 @@ from typing import List, Set
 from tox import hookimpl
 from tox.config import DepOption, ParseIni, SectionReader, testenvprefix
 
+import buck.utils as utils
 
 __THIS__ = os.path.dirname(os.path.abspath(__file__))
 
@@ -66,6 +67,73 @@ class ToxLintCase(BaseCase):
     @property
     def dependencies(self):
         return set(["flake8"])
+
+
+class K8SBaseCase(BaseCase):
+
+    @property
+    def pyproject(self):
+        return f"{self.toxinidir}/pyproject.toml"
+
+    @property
+    def target_dirs(self):
+        return [f"{self.toxinidir}/src/", f"{self.toxinidir}/tests/"]
+
+    @property
+    def lib_dir(self):
+        return f"{self.toxinidir}/lib/"
+
+
+class ToxK8SLintCase(K8SBaseCase):
+    name = 'pep8'
+    description = 'Auto-generated lint case'
+
+
+    @property
+    def commands(self):
+        return [
+            ["codespell"] + self.target_dirs,
+            ["pflake8", "--exclude", f"{self.lib_dir}", "--config",
+             f"{self.pyproject}"] + self.target_dirs,
+            ["isort", "--check-only", "--diff", "--skip-glob",
+             f"{self.toxinidir}/lib/"] + self.target_dirs,
+            ["black", "--config", f"{self.pyproject}", "--check", "--diff",
+             "--exclude", f"{self.lib_dir}"] + self.target_dirs,
+        ]
+
+    @property
+    def dependencies(self):
+        return set([
+            "black",
+            "flake8",
+            "flake8-docstrings",
+            "flake8-copyright",
+            "flake8-builtins",
+            "pyproject-flake8",
+            "pep8-naming",
+            "isort",
+            "codespell"])
+
+
+class ToxK8SFMTCase(K8SBaseCase):
+    name = 'fmt'
+    description = 'Auto-generated fmt case'
+
+    @property
+    def commands(self):
+        return [
+            ["isort", "--skip-glob",
+             f"{self.toxinidir}/lib/"] + self.target_dirs,
+            ["black", "--config", f"{self.pyproject}",
+             "--exclude", f"{self.lib_dir}"] + self.target_dirs,
+        ]
+
+    @property
+    def dependencies(self):
+        return set([
+            "black",
+            "isort"])
+
 
 
 class ToxPy3Case(BaseCase):
@@ -235,12 +303,21 @@ def tox_configure(config):
 
     tox = Tox(config)
 
-    tox_cases = [ToxLintCase(config),
-                 ToxPy3Case(config),
-                 ToxPy310Case(config),
-                 ToxCharmcraftBuildCase(config),
-                 ToxCoverCase(config),
-                 ]
+    all_tox_cases = {
+        utils.K8S: {
+            'main': [
+                ToxCharmcraftBuildCase(config),
+                ToxK8SLintCase(config),
+                ToxK8SFMTCase(config)],
+        utils.UNKNOWN: {
+            'main': [
+                ToxLintCase(config),
+                ToxPy3Case(config),
+                ToxPy310Case(config),
+                ToxCharmcraftBuildCase(config),
+                ToxCoverCase(config)]}}}
+
+    tox_cases = all_tox_cases[utils.get_charm_type()][utils.get_branch_name()]
 
     # Add them to the envconfig list before testing for explicit calls, because
     # we want the user to be able to specifically state an auto-generated

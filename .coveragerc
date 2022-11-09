@@ -3,6 +3,6 @@ branch = True
 concurrency = multiprocessing
 parallel = True
 source =
-    buck/
+    buck
 omit =
     .tox/*

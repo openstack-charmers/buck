@@ -9,11 +9,9 @@ Charmed OpenStack charms.
 Installation
 ------------
 
-Using the package manager [pip](https://pip.pypa.io/en/stable/) to install buck.
+Using the package manager `pip <https://pip.pypa.io/en/stable/>`_ to install buck: ::
 
-```bash
-pip install git+https://github.com/freyes/buck.git#egg=buck
-```
+    pip install git+https://github.com/openstack-charmers/buck.git#egg=buck
 
 Using the snap: ::
 
@@ -32,7 +30,7 @@ Example tox.ini: ::
   skipsdist = True
   skip_missing_interpreters = False
   requires =
-    buck @ git+https://github.com/freyes/buck.git@main#egg=buck
+    buck @ git+https://github.com/openstack-charmers/buck.git@main#egg=buck
 
 Buck Up (experimental)
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -77,9 +75,9 @@ Why 'Buck'?
 -----------
 
 - After many executions of ``petname`` this animal standed out.
-- Buck is the `male form of an Antelope <https://en.wikipedia.org/wiki/List_of_animal_names>`.
+- Buck is the `male form of an Antelope <https://en.wikipedia.org/wiki/List_of_animal_names>`_.
 - Antelope was the development cycle of OpenStack when this project started.
-- 'buck up' means `'to raise the morale of' <https://www.merriam-webster.com/dictionary/buck%20up>`.
+- 'buck up' means `'to raise the morale of' <https://www.merriam-webster.com/dictionary/buck%20up>`_.
 
 License
 -------
@@ -87,5 +85,5 @@ License
 `GPLv3 <./LICENSE>`_
 
 
-.. |snapcraft-badge| image:: https://github.com/freyes/buck/actions/workflows/snapcraft.yaml/badge.svg
-.. |check-badge| image:: https://github.com/freyes/buck/actions/workflows/check.yaml/badge.svg
+.. |snapcraft-badge| image:: https://github.com/openstack-charmers/buck/actions/workflows/snapcraft.yaml/badge.svg
+.. |check-badge| image:: https://github.com/openstack-charmers/buck/actions/workflows/check.yaml/badge.svg

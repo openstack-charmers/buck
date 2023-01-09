@@ -10,3 +10,4 @@ build/
 dist/
 .stestr/
 cover/
+.coverage

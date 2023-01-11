@@ -104,7 +104,7 @@ class ToxK8SLintCase(K8SBaseCase):
     def dependencies(self):
         return set([
             "black",
-            "flake8",
+            "flake8!=6.0.0",  # https://github.com/savoirfairelinux/flake8-copyright/issues/19
             "flake8-docstrings",
             "flake8-copyright",
             "flake8-builtins",

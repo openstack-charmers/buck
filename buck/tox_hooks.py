@@ -315,7 +315,7 @@ def tox_configure(config):
                 ToxCharmcraftBuildCase(config),
                 ToxK8SLintCase(config),
                 ToxK8SFMTCase(config),
-            ],
+                ToxCoverCase(config)],
         },
         utils.UNKNOWN: {
             'main': [

@@ -125,7 +125,7 @@ class ToxK8SFuncTarget(ToxK8SFuncBase):
 
     @property
     def commands(self):
-        return [["functest-run-suite", "--keep-model", "--bundle", "{posargs}"]]
+        return ["functest-run-suite", "--keep-model", "--bundle", "{posargs}"]
 
 
 class K8SBaseCase(BaseCase):

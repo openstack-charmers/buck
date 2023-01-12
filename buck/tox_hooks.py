@@ -69,6 +69,65 @@ class ToxLintCase(BaseCase):
         return set(["flake8"])
 
 
+class ToxK8SFuncBase(BaseCase):
+    @property
+    def setenv(self):
+        return {
+            "TEST_MODEL_SETTINGS": "automatically-retry-hooks=true",
+            "TEST_MAX_RESOLVE_COUNT": "5",
+        }
+
+    @property
+    def dependencies(self):
+        return set(
+            [
+                f"-r{self.toxinidir}/test-requirements.txt",
+            ]
+        )
+
+
+class ToxK8SFuncSmoke(ToxK8SFuncBase):
+    name = "func-smoke"
+    description = "Auto-generated func-smoke case"
+
+    @property
+    def commands(self):
+        return [
+            ["functest-run-suite", "--keep-model", "--smoke"],
+        ]
+
+
+class ToxK8SFuncNOOP(ToxK8SFuncBase):
+    name = "func-noop"
+    description = "Auto-generated func-noop case"
+
+    @property
+    def commands(self):
+        return [
+            ["functest-run-suite", "--help"],
+        ]
+
+
+class ToxK8SFuncDev(ToxK8SFuncBase):
+    name = "func-dev"
+    description = "Auto-generated func-dev case"
+
+    @property
+    def commands(self):
+        return [
+            ["functest-run-suite", "--keep-model", "--dev"],
+        ]
+
+
+class ToxK8SFuncTarget(ToxK8SFuncBase):
+    name = "func-target"
+    description = "Auto-generated func-target case"
+
+    @property
+    def commands(self):
+        return [["functest-run-suite", "--keep-model", "--bundle", "{posargs}"]]
+
+
 class K8SBaseCase(BaseCase):
 
     @property
@@ -315,7 +374,11 @@ def tox_configure(config):
                 ToxCharmcraftBuildCase(config),
                 ToxK8SLintCase(config),
                 ToxK8SFMTCase(config),
-                ToxCoverCase(config)],
+                ToxCoverCase(config),
+                ToxK8SFuncSmoke(config),
+                ToxK8SFuncNOOP(config),
+                ToxK8SFuncDev(config),
+                ToxK8SFuncTarget(config)],
         },
         utils.UNKNOWN: {
             'main': [

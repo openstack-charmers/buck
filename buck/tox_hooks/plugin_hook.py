@@ -1,10 +1,10 @@
 
 try:
-    from buck.tox_hooks import tox_hooks_pre_4
+    from buck.tox_hooks import tox_hooks_3
     from tox import hookimpl as impl
     @impl
     def tox_configure(config):
-        tox_hooks_pre_4.tox_configure(config)
+        tox_hooks_3.tox_configure(config)
 except ImportError:
     from buck.tox_hooks import tox_hooks_4
     from tox.plugin import impl  # type: ignore

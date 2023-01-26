@@ -1,12 +1,20 @@
 import copy
 import os
+import pathlib
 from typing import List, Set
+
 from tox import hookimpl
-from tox.config import DepOption, ParseIni, SectionReader, testenvprefix
+from tox.config import (
+    DepOption,
+    ParseIni,
+    SectionReader,
+    testenvprefix
+)
 
 import buck.utils as utils
 
-__THIS__ = os.path.dirname(os.path.abspath(__file__))
+
+__THIS__ = pathlib.Path(pathlib.PurePath(__file__).parent.parent).resolve()
 
 
 passenv_list = (
@@ -39,7 +47,7 @@ class ToxCoverCase(BaseCase):
 
     @property
     def commands(self) -> List[List[str]]:
-        return [[os.path.join(__THIS__, 'tools/cover.sh')]]
+        return [[str(__THIS__ / 'tools' / 'cover.sh')]]
 
     @property
     def setenv(self):
@@ -150,6 +158,7 @@ class ToxPy3Case(BaseCase):
     def dependencies(self):
         return set(
             [f"-r{self.toxinidir}/test-requirements.txt",
+            # ["-rhttps://raw.githubusercontent.com/openstack-charmers/release-tools/master/global/classic-zaza/test-requirements.txt",
              "stestr"])
 
 
@@ -159,7 +168,7 @@ class ToxPy310Case(ToxPy3Case):
     basepython = 'python3.10'
 
 
-class ToxCharmcraftBuildCase(BaseCase):
+class ToxCharmcraftBuildK8sCase(BaseCase):
     name = 'build'
     description = 'Auto-generated build'
 
@@ -169,8 +178,83 @@ class ToxCharmcraftBuildCase(BaseCase):
                 ["charmcraft", "-v", "pack"]]
 
     @property
-    def dependencies(self):
+    def dependencies(self) -> Set[str]:
         return set()
+
+
+class ToxCharmcraftBuildRenameCase(BaseCase):
+    name = 'build'
+    description = 'Auto-generated build'
+
+    @property
+    def commands(self) -> List[List[str]]:
+        return [["charmcraft", "clean"],
+                ["charmcraft", "-v", "pack"],
+                [f"{self.toxinidir}/rename.sh"]]
+
+    @property
+    def dependencies(self) -> Set[str]:
+        return set([f"-r{self.toxinidir}/build-requirements.txt"])
+
+
+class ToxCharmcraftSyncBuildRenameCase(BaseCase):
+    name = 'build'
+    description = 'Auto-generated build'
+
+    @property
+    def commands(self) -> List[List[str]]:
+        return [["make", "sync"],
+                ["charmcraft", "clean"],
+                ["charmcraft", "-v", "pack"],
+                [f"{self.toxinidir}/rename.sh"]]
+
+    @property
+    def dependencies(self) -> Set[str]:
+        return set(
+            # [f"-r{self.toxinidir}/build-requirements.txt"])
+            ["-rhttps://raw.githubusercontent.com/ajkavanagh/release-tools/add-bases-to-lp-config/global/classic-zaza/build-requirements.txt"])
+
+
+
+
+class ToxPep8Case(BaseCase):
+    name = 'pep8'
+    description = "Auto-generated pep8 test case"
+
+    @property
+    def dependencies(self) -> Set[str]:
+        return set(
+            ["flake8==3.9.2",
+             "charm-tools==2.8.4"])
+
+    @property
+    def commands(self) -> List[List[str]]:
+        return [
+            ["flake8"] + self._config.option.args +
+             "hooks unit_tests tests actions lib files".split(),
+            ["charm-proof"]]
+
+
+class ToxFuncModuleCase(BaseCase):
+    name = 'func-target'
+    description = "Auto-generated debug test case"
+
+    @property
+    def dependencies(self) -> Set[str]:
+        return set(
+            [f"-r{self.toxinidir}/test-requirements.txt",
+             # f"-r{self.toxinidir}/requirements.txt"])
+            # ["-rhttps://raw.githubusercontent.com/openstack-charmers/release-tools/master/global/classic-zaza/test-requirements.txt",
+             "-rhttps://raw.githubusercontent.com/openstack-charmers/release-tools/master/global/classic-zaza/requirements.txt"])
+
+    @property
+    def commands(self) -> List[List[str]]:
+        branch = utils.get_branch_name()
+        if '/' in branch:
+            branch = branch.split('/')[-1]
+        return [["functest-run-module",
+                 "zaza.openstack.select.charm.run_tests",
+                 utils.get_charm_name(), branch] + self._config.option.args]
 
 
 # Forked from tox-ansible plugin.
@@ -299,12 +383,19 @@ class Tox(object):
 
         if not getattr(config, allowlist):
             config.allowlist_externals = ["{toxinidir}/rename.sh",
-                                          "charmcraft"]
+                                          "charmcraft",
+                                          "make"]
 
 
-@hookimpl
+
 def tox_configure(config):
+    """Main hook for tox < 3
 
+    This configures tox with the environments depending on what the underlying
+    charm is.
+
+    :param config: the configuration from Tox.
+    """
     tox = Tox(config)
 
     # map of tox cases based on the charm type and the branch
@@ -312,7 +403,7 @@ def tox_configure(config):
     all_tox_cases = {
         utils.K8S: {
             'main': [
-                ToxCharmcraftBuildCase(config),
+                ToxCharmcraftBuildK8sCase(config),
                 ToxK8SLintCase(config),
                 ToxK8SFMTCase(config),
                 ToxCoverCase(config)],
@@ -322,8 +413,17 @@ def tox_configure(config):
                 ToxLintCase(config),
                 ToxPy3Case(config),
                 ToxPy310Case(config),
-                ToxCharmcraftBuildCase(config),
+                ToxCharmcraftBuildRenameCase(config),
                 ToxCoverCase(config)],
+            'master': [
+                ToxPep8Case(config),
+                ToxPy3Case(config),
+                ToxPy310Case(config),
+                # ToxCharmcraftBuildRenameCase(config),
+                ToxCharmcraftSyncBuildRenameCase(config),
+                ToxFuncModuleCase(config),
+                ToxCoverCase(config)],
+                # Flake8Config],
         },
     }
 

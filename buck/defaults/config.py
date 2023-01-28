@@ -57,6 +57,7 @@ classic_testenv = register_env_section(
     commands='stestr run --slowest {posargs}',
     allowlist_externals=('charmcraft',
                          '{toxinidir}/rename.sh'),
+    basepython="python3",
     passenv = ('HOME',
                'TERM',
                'CS_*',

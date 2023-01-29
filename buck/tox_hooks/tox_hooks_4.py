@@ -29,7 +29,6 @@ def tox_add_core_config(core_conf: EnvConfigSet, state: State) -> None:
     state.envs.on_empty_fallback_py = False
     # Never, ever, access state.envs._defined_envs as it finalizes the
     # envs.  e.g. this is a big NO No:
-    # print(f"DEBUG state.envs._defined_envs: {state.envs._defined_envs}")
     p = state.conf._src._parser
     # See if there *is* a buck config section; if so use that.
     try:

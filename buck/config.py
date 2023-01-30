@@ -408,3 +408,34 @@ def resolve_function(fn: str) -> Callable:
     function_str = parts[-1]
     module = importlib.import_module(module_str)
     return getattr(module, function_str)
+
+
+def do_substitutions(substitutions: Dict[str, str],
+                     value: EnvValuesType,
+                     ) -> EnvValuesType:
+    """Do string substitions for variables of {form}.
+
+    The subtitutions are passed as a dictionary, but the keys need to be in
+    the {variable} form for it to work.
+
+    :param substitutions: a dictionary of key -> value substitutions.
+    :param value: The value to do transformations on.
+    :returns: the same structure, but with keys substituted.
+    """
+    if isinstance(value, str):
+        for k, v in substitutions.items():
+            value = value.replace(k, v)
+        return value
+    if isinstance(value, Iterable):
+        return cast(EnvValuesType,
+                    [do_substitutions(substitutions, v) for v in value])
+    return value
+
+
+def make_keys_variable_form(substitutions: Dict[str, str]) -> Dict[str, str]:
+    """Make keys into variable form.
+
+    :param substitutions: a dictionary of key, value pairs.
+    :returns: the same dictionary but with the keys in {key} form.
+    """
+    return {"{" + k + "}": v for k, v in substitutions.items()}

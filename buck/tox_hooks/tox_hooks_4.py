@@ -9,10 +9,17 @@ from tox.session.state import State  # type: ignore
 from tox.tox_env.api import ToxEnv  # type: ignore
 from tox.tox_env.register import ToxEnvRegister  # type: ignore
 
-from buck.config import use_buck_config, Env, validate_env_vars
+from buck.config import (
+    do_substitutions,
+    Env,
+    make_keys_variable_form,
+    use_buck_config,
+    validate_env_vars,
+)
 from buck.defaults.buckini import buck_ini_kv
 
-### Tox hook functions as called from buck.tox_hooks.plugin_hook:
+# ## Tox hook functions as called from buck.tox_hooks.plugin_hook:
+
 
 # These are the tox 4 hooks to configure the virtual tox.ini
 # They are called from hook_start.py if the tox 4 is being used.
@@ -73,17 +80,13 @@ def tox_env_teardown(tox_env: ToxEnv) -> None:
     pass
 
 
-### Utility functions to take the tox env configuration and run it into tox 4.
+# Utility functions to take the tox env configuration and run it into tox 4.
 
 def _transform_env_to_kv(substitutions: Dict[str, str], env: Env
                          ) -> Dict[str, str]:
-    mapped_key = {k: "{" + k + "}" for k in substitutions.keys()}
+    subs = make_keys_variable_form(substitutions)
     mapped_env = validate_env_vars(**env)
     subbed_env = {}
     for k, v in mapped_env.items():
-        for key, substitution in substitutions.items():
-            if mapped_key[key] in v:
-                v = v.replace(mapped_key[key], substitution)
-        subbed_env[k] = v
+        subbed_env[k] = do_substitutions(subs, v)
     return subbed_env
-

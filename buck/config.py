@@ -1,6 +1,14 @@
 
-from typing import (Optional, Dict, List, Union, Type,
-    Callable, Tuple)
+from typing import (
+    Callable,
+    cast,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 from collections.abc import Iterable
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -48,6 +56,12 @@ class default:
             return cls._name == other._name  # type: ignore
         except AttributeError:
             return False
+
+    def __str__(self) -> str:
+        return self._name
+
+    def __repr__(self) -> str:
+        return "default"
 
 
 def get_envs_singleton() -> Env:
@@ -124,13 +138,13 @@ def is_str_or_iterable_str(separator: str,
         return separator.join(v)
     raise TypeError(f"'{v}' is not a str or iterable of str.  It is {type(v)}")
 
-# def is_str(v: str) -> str:
+
 def is_str(v: EnvValuesType) -> str:
     if not isinstance(v, str):
         raise TypeError(f"'{v}' is not a str.  It is {type(v)}")
     return v
 
-# def is_bool(v: bool) -> str:
+
 def is_bool(v: EnvValuesType) -> str:
     if not isinstance(v, bool):
         raise TypeError(f"'{v}' is not a bool. It is {type(v)}")
@@ -182,8 +196,9 @@ class SelectorMatcher:
 
 def selector_matcher_factory(category: str
                              ) -> Callable[..., SelectorMatcher]:
-    def _selector_matcher_factory(*matches: Union[str, default]) -> SelectorMatcher:
-        """Returns a matcher that when passed a string returns whether it matched.
+    def _selector_matcher_factory(*matches: Union[str, default]
+                                  ) -> SelectorMatcher:
+        """Returns callable matcher for a string.
 
         :param *matches: list of stings that this will match against.
         :returns: callable that takes a string and returns a bool of the match.
@@ -324,6 +339,7 @@ def resolve_envs_by_selectors(criteria: Dict[str, Union[str, str]]
             if set(s.category
                    for s in mapping.selectors).issubset(criteria_keys):
                 filtered_mappings.append(mapping)
+
     # sort by length, with a default being lower than one of the same length.
     # Use a cmp function, as it's easier to reason about.
     def _key_mapping(k: Mapping) -> int:

@@ -79,7 +79,7 @@ def get_charm_name() -> str:
     project = get_gitreview_line('project')
     if project is None:
         raise RuntimeError(
-            f"Can't find project in .gitreview?")
+            "Can't find project in .gitreview?")
     charm = project.split('/')[1]
     if "." in charm:
         charm = charm.split('.')[0]

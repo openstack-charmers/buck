@@ -48,6 +48,7 @@ MISC_CHARMS = (
 # OPENSTACK charms are 'everything else in the openstack/charm-* opendev
 # project space.'
 
+
 def determine_category() -> str:
     """Determine the category of the charm.
 
@@ -65,7 +66,7 @@ def determine_category() -> str:
     project = buck.utils.get_gitreview_line('project')
     if project is None:
         raise RuntimeError(
-            f"Can't find project in .gitreview?")
+            "Can't find project in .gitreview?")
     if project.startswith('openstack/charm-'):
         return OPENSTACK
     raise RuntimeError("Can't determine what the charm category is.")

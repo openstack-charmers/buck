@@ -2,6 +2,7 @@
 try:
     from buck.tox_hooks import tox_hooks_3
     from tox import hookimpl as impl
+
     @impl
     def tox_configure(config):
         tox_hooks_3.tox_configure(config)
@@ -42,4 +43,3 @@ except ImportError:
     @impl
     def tox_env_teardown(tox_env):
         tox_hooks_4.tox_env_teardown(tox_env)
-

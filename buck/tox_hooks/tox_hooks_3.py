@@ -1,7 +1,6 @@
 import copy
 import functools
 import os
-import pathlib
 import re
 from typing import (
     Callable,
@@ -15,7 +14,6 @@ from typing import (
     TypeVar,
 )
 
-from tox import hookimpl
 from tox.config import (
     Config,
     DepConfig,
@@ -23,7 +21,6 @@ from tox.config import (
     ParseIni,
     SectionReader,
     TestenvConfig,
-    testenvprefix,
 )
 
 from buck.config import (
@@ -33,7 +30,6 @@ from buck.config import (
     use_buck_config,
 )
 from buck.defaults.buckini import buck_ini_kv
-import buck.utils as utils
 
 
 def tox_configure(config: Config) -> None:
@@ -212,6 +208,7 @@ def get_buck_config(config: Config) -> List[Tuple[str, str]]:
 
 T = TypeVar('T')
 
+
 def env_resolver(config: Config,
                  envs: List[Env],
                  env: Env,
@@ -302,7 +299,7 @@ def _resolve_env_value(
     value: EnvValuesType,
     return_type: type[T],
     visited: List[str],
- ) -> Optional[T]:
+) -> Optional[T]:
     if isinstance(value, str):
         m = re.match(r"^\{\[(\S+)\](\S+)\}$", value.strip())
         if m:

@@ -8,8 +8,7 @@
 #
 # Thus this configuration data is shared between the two implementations.
 #
-# NOTE
-# ----
+# NOTE:
 #
 # This configuration may be broken out into a separate repo to make this plugin
 # more general. Please raise an issue if you'd like to use this tox plugin for
@@ -58,19 +57,18 @@ classic_testenv = register_env_section(
     allowlist_externals=('charmcraft',
                          '{toxinidir}/rename.sh'),
     basepython="python3",
-    passenv = ('HOME',
-               'TERM',
-               'CS_*',
-               'OS_*',
-               'TEST_*'),
-    deps = '-r{toxinidir}/test-requirements.txt',
-    # deps = ("-rhttps://raw.githubusercontent.com/openstack-charmers/"
-            # "release-tools/master/global/classic-zaza/test-requirements.txt"),
+    passenv=('HOME',
+             'TERM',
+             'CS_*',
+             'OS_*',
+             'TEST_*'),
+    deps='-r{toxinidir}/test-requirements.txt',
 )
+
 
 classic_build = register_env_section(
     name='classic_build',
-    env_name= "testenv:build",
+    env_name="testenv:build",
     basepython="python3",
     # charmcraft clean is done to ensure that
     # `tox -e build` always performs a clean, repeatable build.
@@ -87,7 +85,7 @@ classic_build = register_env_section(
 
 classic_sync_build = register_env_section(
     name='classic_sync_build',
-    env_name= "testenv:build",
+    env_name="testenv:build",
     description=(
         "Build of classic charms including a 'make sync' prior to the "
         "charmcraft build being performed to update the charmhelpers."),
@@ -121,6 +119,7 @@ classic_py3 = register_env_section(
           deps_classic_functional_tests)
 )
 
+
 classic_py3_keystone_test = register_env_section(
     name='classic_py3_keystone_test',
     description="Custome py3 testenv that uses local test-requirements.txt",
@@ -130,6 +129,7 @@ classic_py3_keystone_test = register_env_section(
           deps_classic_functional_tests)
 )
 
+
 classic_py310 = register_env_section(
     name='classic_py310',
     env_name='testenv:py310',
@@ -137,6 +137,7 @@ classic_py310 = register_env_section(
     deps=('-r{toxinidir}/requirements.txt',
           deps_classic_functional_tests)
 )
+
 
 classic_pep8 = register_env_section(
     name='classic_pep8',
@@ -148,6 +149,7 @@ classic_pep8 = register_env_section(
               'hooks unit_tests actions lib files',
               'charm-proof'),
 )
+
 
 # Technique based heavily upon
 # https://github.com/openstack/nova/blob/master/tox.ini
@@ -168,12 +170,14 @@ classic_cover = register_env_section(
           deps_classic_functional_tests)
 )
 
+
 classic_venv = register_env_section(
     name='classic_venv',
     env_name='testenv:venv',
     basepython='python3',
     commands='{posargs}',
 )
+
 
 classic_func_noop = register_env_section(
     name='classic_func_noop',
@@ -183,6 +187,7 @@ classic_func_noop = register_env_section(
     deps=deps_classic_functional_tests,
 )
 
+
 classic_func = register_env_section(
     name='classic_func',
     env_name='testenv:func',
@@ -190,6 +195,7 @@ classic_func = register_env_section(
     commands='functest-run-suite --keep-model',
     deps=deps_classic_functional_tests,
 )
+
 
 classic_func_smoke = register_env_section(
     name='classic_func_smoke',
@@ -199,6 +205,7 @@ classic_func_smoke = register_env_section(
     deps=deps_classic_functional_tests,
 )
 
+
 classic_func_dev = register_env_section(
     name='classic_func_dev',
     env_name='testenv:func-dev',
@@ -207,6 +214,7 @@ classic_func_dev = register_env_section(
     deps=deps_classic_functional_tests,
 )
 
+
 classic_func_target = register_env_section(
     name='classic_func_target',
     env_name='testenv:func-target',
@@ -214,6 +222,7 @@ classic_func_target = register_env_section(
     commands='functest-run-suite --keep-model --bundle {posargs}',
     deps=deps_classic_functional_tests,
 )
+
 
 classic_func_target_centralised = register_env_section(
     name='classic_func_target_centralised',
@@ -243,22 +252,23 @@ source_testenv = register_env_section(
             'CHARM_LAYERS_DIR={toxinidir}/layers',
             'CHARM_INTERFACES_DIR={toxinidir}/interfaces',
             'JUJU_REPOSITORY={toxinidir}/build'),
-    passenv = ('no_proxy',
-               'http_proxy',
-               'https_proxy',
-               'CHARM_INTERFACES_DIR',
-               'CHARM_LAYERS_DIR',
-               'JUJU_REPOSITORY'),
-    deps = '-r{toxinidir}/requirements.txt',
+    passenv=('no_proxy',
+             'http_proxy',
+             'https_proxy',
+             'CHARM_INTERFACES_DIR',
+             'CHARM_LAYERS_DIR',
+             'JUJU_REPOSITORY'),
+    deps='-r{toxinidir}/requirements.txt',
     allowlist_externals=('charmcraft',
                          'bash',
                          'tox',
                          '{toxinidir}/rename.sh'),
 )
 
+
 source_build_with_rename = register_env_section(
     name='source_build_with_rename',
-    env_name= "testenv:build",
+    env_name="testenv:build",
     basepython="python3",
     # charmcraft clean is done to ensure that
     # `tox -e build` always performs a clean, repeatable build.
@@ -272,9 +282,10 @@ source_build_with_rename = register_env_section(
           "release-tools/master/global/source-zaza/build-requirements.txt"),
 )
 
+
 source_build = register_env_section(
     name='source_build',
-    env_name= "testenv:build",
+    env_name="testenv:build",
     basepython="python3",
     # charmcraft clean is done to ensure that
     # `tox -e build` always performs a clean, repeatable build.
@@ -285,6 +296,7 @@ source_build = register_env_section(
               'charmcraft clean'),
 )
 
+
 source_build_reactive = register_env_section(
     name='source_build_reactive',
     env_name='testenv:build-reactive',
@@ -293,7 +305,6 @@ source_build_reactive = register_env_section(
         'charm-build --log-level DEBUG --use-lock-file-branches '
         '-o {toxinidir}/build/builds src {posargs}'),
 )
-
 
 
 source_build_reactive_binary_wheels = register_env_section(
@@ -317,7 +328,6 @@ source_add_build_lock_file = register_env_section(
 )
 
 
-
 source_py3 = register_env_section(
     name='source_py3',
     env_name='testenv:py3',
@@ -325,12 +335,14 @@ source_py3 = register_env_section(
     deps='-r{toxinidir}/requirements.txt',
 )
 
+
 source_py310 = register_env_section(
     name='source_py310',
     env_name='testenv:py310',
     basepython='python3.10',
     deps='-r{toxinidir}/requirements.txt',
 )
+
 
 source_pep8 = register_env_section(
     name='source_pep8',
@@ -342,6 +354,7 @@ source_pep8 = register_env_section(
               'hooks unit_tests actions lib files',
               'charm-proof'),
 )
+
 
 # Technique based heavily upon
 # https://github.com/openstack/nova/blob/master/tox.ini
@@ -369,18 +382,21 @@ source_venv = register_env_section(
 )
 
 
-
 deps_reactive_functional_tests: str = (
     "-rhttps://raw.githubusercontent.com/openstack-charmers/"
     "release-tools/master/global/source-zaza/src/"
     "test-requirements.txt")
 
-passenv_reactive_functional_tests: Tuple[str, ...] = ('{[testenv]setenv}',
-                                                     'HOME',
-                                                     'TERM',
-                                                     'CS_*',
-                                                     'OS_*',
-                                                     'TEST_*')
+
+passenv_reactive_functional_tests: Tuple[str, ...] = (
+    '{[testenv]setenv}',
+    'HOME',
+    'TERM',
+    'CS_*',
+    'OS_*',
+    'TEST_*',
+)
+
 
 source_func = register_env_section(
     name='source_func',
@@ -388,8 +404,9 @@ source_func = register_env_section(
     passenv=passenv_reactive_functional_tests,
     basepython='python3',
     commands='functest-run-suite --keep-model',
-    deps = deps_reactive_functional_tests,
+    deps=deps_reactive_functional_tests,
 )
+
 
 source_func_smoke = register_env_section(
     name='source_func_smoke',
@@ -397,8 +414,9 @@ source_func_smoke = register_env_section(
     passenv=passenv_reactive_functional_tests,
     basepython='python3',
     commands='functest-run-suite --keep-model --smoke',
-    deps = deps_reactive_functional_tests,
+    deps=deps_reactive_functional_tests,
 )
+
 
 source_func_dev = register_env_section(
     name='source_func_dev',
@@ -406,8 +424,9 @@ source_func_dev = register_env_section(
     passenv=passenv_reactive_functional_tests,
     basepython='python3',
     commands='functest-run-suite --keep-model --dev',
-    deps = deps_reactive_functional_tests,
+    deps=deps_reactive_functional_tests,
 )
+
 
 source_func_target = register_env_section(
     name='source_func_target',
@@ -415,8 +434,9 @@ source_func_target = register_env_section(
     passenv=passenv_reactive_functional_tests,
     basepython='python3',
     commands='functest-run-suite --keep-model --bundle {posargs}',
-    deps = deps_reactive_functional_tests,
+    deps=deps_reactive_functional_tests,
 )
+
 
 ###
 #
@@ -435,18 +455,15 @@ k8s_testenv = register_env_section(
     name='k8s_testenv',
     env_name='testenv',
     skip_install=True,
-    # setenv="",
-    # allowlist_externals=('charmcraft',
-                         # '{toxinidir}/rename.sh'),
-    passenv = ('HOME',
-               'TERM',
-               'CS_*',
-               'OS_*',
-               'TEST_*',
-               'no_proxy',
-               'http_proxy',
-               'https_proxy',
-               'JUJU_REPOSITORY'),
+    passenv=('HOME',
+             'TERM',
+             'CS_*',
+             'OS_*',
+             'TEST_*',
+             'no_proxy',
+             'http_proxy',
+             'https_proxy',
+             'JUJU_REPOSITORY'),
 )
 
 
@@ -536,6 +553,8 @@ k8s_build = register_env_section(
     name='k8s_build',
     description='Autogenerated build for k8s sunbeam charms',
     env_name='testenv:build',
+    allowlist_externals=('charmcraft',
+                         '{toxinidir}/rename.sh'),
     commands=('charmcraft clean',
               'charmcraft -v pack'),
 )

@@ -1,4 +1,4 @@
-### Default [buck] tox.ini configuration section as keys:
+# Default [buck] tox.ini configuration section as keys:
 
 buck_ini_kv = dict(
     lookup="category branch type charm",
@@ -8,4 +8,3 @@ buck_ini_kv = dict(
     charm="function:buck.defaults.select.get_charm_from_gitreview",
     config_module="buck.defaults.config",
 )
-

@@ -47,7 +47,7 @@ def tox_configure(config: Config) -> None:
     buck_envlist_names = []
     prefix = 'tox' if config.toxinipath.basename == "setup.cfg" else None
     tox_reader = get_reader(config, "tox", prefix=prefix)
-    _env_resolver = functools.partial(env_resolver, config, envs)
+    _env_resolver = functools.partial(env_resolver, envs)
     for env in envs:
         testenv_config = make_tox3_env(tox_reader,
                                        _env_resolver,
@@ -209,8 +209,7 @@ def get_buck_config(config: Config) -> List[Tuple[str, str]]:
 T = TypeVar('T')
 
 
-def env_resolver(config: Config,
-                 envs: List[Env],
+def env_resolver(envs: List[Env],
                  env: Env,
                  key: str,
                  return_type: type[T],
@@ -228,7 +227,6 @@ def env_resolver(config: Config,
     This function doesn't resolve substitutions (e.g. {toxinidir}, {posargs},
     etc.) which are done by a value resolver.
 
-    :param config: The config from tox 3
     :param envs: the envs being used for resolving values
     :param env: the actual env to do the resolving.
     :param key: the key that a value is needed for.
@@ -260,8 +258,7 @@ def env_resolver(config: Config,
             # find the env with the name fallback_env
             for _env in envs:
                 if _env['env_name'] == fallback_env:
-                    return env_resolver(config,
-                                        envs,
+                    return env_resolver(envs,
                                         _env,
                                         key,
                                         return_type,
@@ -272,8 +269,7 @@ def env_resolver(config: Config,
     values = [value] if isinstance(value, (str, bool)) else value
     resolved_values = []
     for v in values:
-        new_v = _resolve_env_value(config,
-                                   envs,
+        new_v = _resolve_env_value(envs,
                                    v,
                                    return_type,
                                    visited_envs)
@@ -294,7 +290,6 @@ def env_resolver(config: Config,
 
 
 def _resolve_env_value(
-    config: Config,
     envs: List[Env],
     value: EnvValuesType,
     return_type: type[T],
@@ -314,8 +309,7 @@ def _resolve_env_value(
                 if _env['env_name'] == _env_name:
                     # recursively call env_resolver which will result in a
                     # resolved value
-                    new_v = env_resolver(config, envs, _env, _key_name,
-                                         return_type,
+                    new_v = env_resolver(envs, _env, _key_name, return_type,
                                          cast(list, visited) + [m.group(0)])
                     if new_v is not None:
                         return new_v
@@ -334,7 +328,7 @@ def _resolve_env_value(
             for v in value:
                 if isinstance(v, str):
                     resolved_values.append(_resolve_env_value(
-                        config, envs, v, str, visited))
+                        envs, v, str, visited))
                 else:
                     resolved_values.append(v)
             return cast(T, resolved_values)

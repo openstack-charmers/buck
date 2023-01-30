@@ -476,7 +476,6 @@ def make_keys_variable_form(substitutions: Dict[str, str]) -> Dict[str, str]:
     return {"{" + k + "}": v for k, v in substitutions.items()}
 
 
-
 T = TypeVar('T')
 
 

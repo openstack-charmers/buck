@@ -18,7 +18,6 @@
 from typing import cast
 
 import unittest
-import importlib
 
 # Note importing buck_config automatically tests that the module imports and
 # that the keys are valid, etc.  These tests are checks that they envs sets are
@@ -26,8 +25,7 @@ import importlib
 
 import buck.config as buck_config
 # unit under test:
-import buck.defaults.config as envs_config
-
+import buck.defaults.config  # noqa
 
 
 class TestTox(unittest.TestCase):
@@ -48,14 +46,24 @@ class TestTox(unittest.TestCase):
                     f"Prefix {prefix} is missing from {', '.join(env_names)} "
                     f"for mapping {mapping_name}")
 
-            # ensure that every env has a basepython defined.
+            # check that every key in the envs is resolvable
             for env in mapping.envs:
-                # TODO: can't do this until env_resolver is refactored into
-                # buck.config
-                pass
-
-
-
-
-
-
+                for key in env.keys():
+                    # Test for each return type, as it may resolve to not None
+                    # for one of them
+                    for _type in (str, list, bool):
+                        try:
+                            v = buck_config.env_resolver(
+                                mapping.envs, env, key, _type)
+                            break
+                        except buck_config.ParameterError:
+                            pass
+                    else:
+                        raise self.failureException(
+                            (f"Key {key} raised ParametereError for all "
+                             f"str, list, bool for {env['env_name']} in "
+                             f"mapping {mapping_name}"))
+                    if v is None:
+                        raise self.failureException(
+                            (f"Key {key} is None for {env['env_name']} in "
+                             f"mapping {mapping_name}"))

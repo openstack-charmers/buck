@@ -42,7 +42,7 @@ def tox_configure(config: Config) -> None:
     resolved_selectors, envs = use_buck_config(config_keys)
     # now attempt to convert the envs into into TestenvConfig objects.
     buck_envlist_names = []
-    prefix = ('tox' if config.toxinipath.basename == "setup.cfg"  #type:ignore
+    prefix = ('tox' if config.toxinipath.basename == "setup.cfg"  # type:ignore
               else None)
     tox_reader = get_reader(config, "tox", prefix=prefix)
     _env_resolver = functools.partial(env_resolver, envs)

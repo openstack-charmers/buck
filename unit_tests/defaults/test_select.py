@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import unittest
-
 from ..utils import BaseTestCase
 
 
@@ -81,7 +79,6 @@ class TestTox(BaseTestCase):
             buck.utils, 'get_charm_type', return_value=select.K8S)
         self.assertEqual(select.determine_charm_type(),
                          select.K8S)
-
 
     def test_get_branch_from_gitreview(self):
         self.patch_object(

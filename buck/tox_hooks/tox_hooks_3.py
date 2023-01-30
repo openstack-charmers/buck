@@ -1,17 +1,14 @@
 import copy
 import functools
 import os
-import re
 from typing import (
     Callable,
     cast,
     Dict,
-    Iterable,
     List,
     Optional,
     Set,
     Tuple,
-    TypeVar,
 )
 
 from tox.config import (
@@ -25,8 +22,8 @@ from tox.config import (
 
 from buck.config import (
     Env,
+    env_resolver,
     EnvValuesType,
-    ParameterError,
     use_buck_config,
 )
 from buck.defaults.buckini import buck_ini_kv
@@ -45,33 +42,44 @@ def tox_configure(config: Config) -> None:
     resolved_selectors, envs = use_buck_config(config_keys)
     # now attempt to convert the envs into into TestenvConfig objects.
     buck_envlist_names = []
-    prefix = 'tox' if config.toxinipath.basename == "setup.cfg" else None
+    prefix = ('tox' if config.toxinipath.basename == "setup.cfg"  #type:ignore
+              else None)
     tox_reader = get_reader(config, "tox", prefix=prefix)
     _env_resolver = functools.partial(env_resolver, envs)
     for env in envs:
         testenv_config = make_tox3_env(tox_reader,
-                                       _env_resolver,
+                                       _env_resolver,  # type:ignore
                                        resolved_selectors,
                                        config,
                                        env)
-        env_name = env['env_name']
+        env_name = cast(str, env['env_name'])
         name = env_name.split(':')[-1] if ':' in env_name else env_name
         buck_envlist_names.append(name)
         config.envconfigs[name] = testenv_config
 
     # Don't filter down or add to envlist if an environment has been
     # specified by the user
-    if hasattr(config, "envlist_explicit") and config.envlist_explicit:
+    if (hasattr(config, "envlist_explicit") and
+            config.envlist_explicit):  # type:ignore
         return
 
     # Add the items we generated to the envlist to be executed by default. Use
     # a Set, because there might be dupes.
-    config.envlist = list(set(config.envlist + buck_envlist_names))
-    envlist_default = copy.deepcopy(config.envlist)
+    config.envlist = list(  # type:ignore
+        set(config.envlist + buck_envlist_names))  # type:ignore
+    envlist_default = copy.deepcopy(config.envlist)  # type:ignore
     envlist_default.remove('build')
     envlist_default.remove('python')
-    config.envlist.sort()
-    config.envlist_default = envlist_default
+    config.envlist.sort()  # type:ignore
+    config.envlist_default = envlist_default  # type:ignore
+
+
+def get_buck_config(config: Config) -> List[Tuple[str, str]]:
+    try:
+        config_keys = list(config._cfg.sections['buck'].items())  # type:ignore
+    except KeyError:
+        config_keys = list(buck_ini_kv.items())
+    return config_keys
 
 
 def get_reader(config: Config, section: str, prefix: Optional[str] = None
@@ -87,15 +95,15 @@ def get_reader(config: Config, section: str, prefix: Optional[str] = None
     :returns: a SectionReader for the named section.
     """
     # pylint: disable=protected-access
-    reader = SectionReader(section, config._cfg, prefix=prefix)
+    reader = SectionReader(section, config._cfg, prefix=prefix)  # type:ignore
     distshare_default = os.path.join(str(config.homedir), ".tox", "distshare")
     reader.addsubstitutions(
-        toxinidir=config.toxinidir,
+        toxinidir=config.toxinidir,  # type:ignore
         homedir=config.homedir,
-        toxworkdir=config.toxworkdir,
+        toxworkdir=config.toxworkdir,  # type:ignore
     )
     distdir = reader.getpath(
-        "distdir", os.path.join(str(config.toxworkdir), "dist")
+        "distdir", os.path.join(str(config.toxworkdir), "dist")  # type:ignore
     )
     reader.addsubstitutions(distdir=distdir)
     distshare = reader.getpath("distshare", distshare_default)
@@ -139,7 +147,8 @@ def make_tox3_env(tox_reader: SectionReader,
     section: str = cast(str, env['env_name'])
     name = section.split(':')[-1] if ':' in section else section
 
-    testenv = make_envconfig(config, name, section, tox_reader._subs, config)
+    testenv = make_envconfig(config,  # type:ignore
+                             name, section, tox_reader._subs, config)
 
     testenv.skipsdist = env_resolver('skipsdisk', bool)
     testenv.skip_install = env_resolver('skip_install', bool)
@@ -198,143 +207,6 @@ def make_tox3_env(tox_reader: SectionReader,
     return testenv
 
 
-def get_buck_config(config: Config) -> List[Tuple[str, str]]:
-    try:
-        config_keys = list(config._cfg.sections['buck'].items())
-    except KeyError:
-        config_keys = list(buck_ini_kv.items())
-    return config_keys
-
-
-T = TypeVar('T')
-
-
-def env_resolver(envs: List[Env],
-                 env: Env,
-                 key: str,
-                 return_type: type[T],
-                 visited_envs: Optional[List[str]] = None
-                 ) -> Optional[T]:
-    """Resolve a `key` in `env` to it's value.
-
-    The value is a EnvValuesType, and may contain references to other envs in
-    the form of '{[envname]key}', in which case that should be used
-    interpolated into the returned value as well.  If the env_name is of the
-    form "prefix:name", then an env with an env_name of "prefix" is used as a
-    fallback to provide the value.  Note that this function recurses as
-    necessary (and visited_envs prevents infinite recursion.).
-
-    This function doesn't resolve substitutions (e.g. {toxinidir}, {posargs},
-    etc.) which are done by a value resolver.
-
-    :param envs: the envs being used for resolving values
-    :param env: the actual env to do the resolving.
-    :param key: the key that a value is needed for.
-    :param return_type: the expected type of the return value
-    :param visited_env: a list of envs that have been visited; catches
-        recursive resolving loops.
-    :returns: the resolved value for the key lookup.
-    :raises: buck.config.ParameterError if the resolving can't resolve a value
-        completely.
-    """
-    env_name = cast(str, env['env_name'])
-    if visited_envs is None:
-        visited_envs = []
-    if env_name in visited_envs:
-        raise ParameterError(
-            f"Circular dependency on resolving a value: "
-            f"{'->'.join(visited_envs)}")
-    visited_envs.append(env_name)
-    try:
-        value = env[key]
-    except KeyError:
-        # see if we can lookup in a fallback env.
-        if ':' in env_name:
-            parts = env_name.split(':')
-            fallback_env = ':'.join(parts[:-1])
-            # ensure we aren't being circular
-            if fallback_env in visited_envs:
-                return None
-            # find the env with the name fallback_env
-            for _env in envs:
-                if _env['env_name'] == fallback_env:
-                    return env_resolver(envs,
-                                        _env,
-                                        key,
-                                        return_type,
-                                        visited_envs)
-        return None
-    # now see if the value requires a look up.
-    # first work out what it is.
-    values = [value] if isinstance(value, (str, bool)) else value
-    resolved_values = []
-    for v in values:
-        new_v = _resolve_env_value(envs,
-                                   v,
-                                   return_type,
-                                   visited_envs)
-        if isinstance(new_v, str):
-            resolved_values.append(new_v)
-        elif isinstance(new_v, Iterable):
-            resolved_values.extend(new_v)
-        else:
-            resolved_values.append(new_v)
-    if return_type is list:
-        return cast(T, resolved_values)
-    if len(resolved_values) != 1:
-        raise ParameterError(
-            f"Return type is not list but more than one item for {key} "
-            f"from env {env_name}, values: "
-            f"{', '.join(str(v) for v in resolved_values)}")
-    return resolved_values[0]
-
-
-def _resolve_env_value(
-    envs: List[Env],
-    value: EnvValuesType,
-    return_type: type[T],
-    visited: List[str],
-) -> Optional[T]:
-    if isinstance(value, str):
-        m = re.match(r"^\{\[(\S+)\](\S+)\}$", value.strip())
-        if m:
-            if m.group(0) in visited:
-                raise ParameterError(
-                    f"Circular dependency for {m.group(0)} as already "
-                    f"visisted: {'->'.join(visited)}")
-            visited.append(m.group(0))
-            _env_name = m.group(1)
-            _key_name = m.group(2)
-            for _env in envs:
-                if _env['env_name'] == _env_name:
-                    # recursively call env_resolver which will result in a
-                    # resolved value
-                    new_v = env_resolver(envs, _env, _key_name, return_type,
-                                         cast(list, visited) + [m.group(0)])
-                    if new_v is not None:
-                        return new_v
-                    raise ParameterError(
-                        f"Couldn't interpolate '{value}' in env: {_env_name}")
-            else:
-                raise ParameterError(
-                    f"Couldn't find env {_env_name} referenced from "
-                    f"value {value} for key {_key_name}")
-        # just return the value if there is no match.
-        return cast(T, value)
-    else:
-        # is it a list of things
-        if isinstance(value, Iterable):
-            resolved_values = []
-            for v in value:
-                if isinstance(v, str):
-                    resolved_values.append(_resolve_env_value(
-                        envs, v, str, visited))
-                else:
-                    resolved_values.append(v)
-            return cast(T, resolved_values)
-        return cast(T, value)
-
-
 def interpolate_value(config: Config,
                       substitutions: Dict[str, str],
                       value: str) -> str:
@@ -350,10 +222,10 @@ def interpolate_value(config: Config,
     subs = substitutions.copy()
     extra_subs = {
         'posargs': ' '.join(config.option.args),
-        'toxinidir': str(config.toxinidir),
-        'toxworkdir': str(config.toxworkdir),
+        'toxinidir': str(config.toxinidir),  # type:ignore
+        'toxworkdir': str(config.toxworkdir),  # type:ignore
         'homedir': str(config.homedir),
-        'distshare': str(config.distshare),
+        'distshare': str(config.distshare),  # type:ignore
     }
     for k, v in extra_subs.items():
         if k not in subs:

@@ -24,6 +24,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 from collections.abc import Iterable
@@ -31,6 +32,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from functools import partial
 import importlib
+import re
 
 
 # Type definitions
@@ -472,3 +474,133 @@ def make_keys_variable_form(substitutions: Dict[str, str]) -> Dict[str, str]:
     :returns: the same dictionary but with the keys in {key} form.
     """
     return {"{" + k + "}": v for k, v in substitutions.items()}
+
+
+
+T = TypeVar('T')
+
+
+def env_resolver(envs: List[Env],
+                 env: Env,
+                 key: str,
+                 return_type: type[T],
+                 visited_envs: Optional[List[str]] = None
+                 ) -> Optional[T]:
+    """Resolve a `key` in `env` to it's value.
+
+    The value is a EnvValuesType, and may contain references to other envs in
+    the form of '{[envname]key}', in which case that should be used
+    interpolated into the returned value as well.  If the env_name is of the
+    form "prefix:name", then an env with an env_name of "prefix" is used as a
+    fallback to provide the value.  Note that this function recurses as
+    necessary (and visited_envs prevents infinite recursion.).
+
+    This function doesn't resolve substitutions (e.g. {toxinidir}, {posargs},
+    etc.) which are done by a value resolver.
+
+    :param envs: the envs being used for resolving values
+    :param env: the actual env to do the resolving.
+    :param key: the key that a value is needed for.
+    :param return_type: the expected type of the return value
+    :param visited_env: a list of envs that have been visited; catches
+        recursive resolving loops.
+    :returns: the resolved value for the key lookup.
+    :raises: buck.config.ParameterError if the resolving can't resolve a value
+        completely.
+    """
+    env_name = cast(str, env['env_name'])
+    if visited_envs is None:
+        visited_envs = []
+    if env_name in visited_envs:
+        raise ParameterError(
+            f"Circular dependency on resolving a value: "
+            f"{'->'.join(visited_envs)}")
+    visited_envs.append(env_name)
+    try:
+        value = env[key]
+    except KeyError:
+        # see if we can lookup in a fallback env.
+        if ':' in env_name:
+            parts = env_name.split(':')
+            fallback_env = ':'.join(parts[:-1])
+            # ensure we aren't being circular
+            if fallback_env in visited_envs:
+                return None
+            # find the env with the name fallback_env
+            for _env in envs:
+                if _env['env_name'] == fallback_env:
+                    return env_resolver(envs,
+                                        _env,
+                                        key,
+                                        return_type,
+                                        visited_envs)
+        return None
+    # now see if the value requires a look up.
+    # first work out what it is.
+    values = [value] if isinstance(value, (str, bool)) else value
+    resolved_values = []
+    for v in values:
+        new_v = _resolve_env_value(envs,
+                                   v,
+                                   return_type,
+                                   visited_envs)
+        if isinstance(new_v, str):
+            resolved_values.append(new_v)
+        elif isinstance(new_v, Iterable):
+            resolved_values.extend(new_v)
+        else:
+            resolved_values.append(new_v)
+    if return_type is list:
+        return cast(T, resolved_values)
+    if len(resolved_values) != 1:
+        raise ParameterError(
+            f"Return type is not list but more than one item for {key} "
+            f"from env {env_name}, values: "
+            f"{', '.join(str(v) for v in resolved_values)}")
+    return resolved_values[0]
+
+
+def _resolve_env_value(
+    envs: List[Env],
+    value: EnvValuesType,
+    return_type: type[T],
+    visited: List[str],
+) -> Optional[T]:
+    if isinstance(value, str):
+        m = re.match(r"^\{\[(\S+)\](\S+)\}$", value.strip())
+        if m:
+            if m.group(0) in visited:
+                raise ParameterError(
+                    f"Circular dependency for {m.group(0)} as already "
+                    f"visisted: {'->'.join(visited)}")
+            visited.append(m.group(0))
+            _env_name = m.group(1)
+            _key_name = m.group(2)
+            for _env in envs:
+                if _env['env_name'] == _env_name:
+                    # recursively call env_resolver which will result in a
+                    # resolved value
+                    new_v = env_resolver(envs, _env, _key_name, return_type,
+                                         cast(list, visited) + [m.group(0)])
+                    if new_v is not None:
+                        return new_v
+                    raise ParameterError(
+                        f"Couldn't interpolate '{value}' in env: {_env_name}")
+            else:
+                raise ParameterError(
+                    f"Couldn't find env {_env_name} referenced from "
+                    f"value {value} for key {_key_name}")
+        # just return the value if there is no match.
+        return cast(T, value)
+    else:
+        # is it a list of things
+        if isinstance(value, Iterable):
+            resolved_values = []
+            for v in value:
+                if isinstance(v, str):
+                    resolved_values.append(_resolve_env_value(
+                        envs, v, str, visited))
+                else:
+                    resolved_values.append(v)
+            return cast(T, resolved_values)
+        return cast(T, value)

@@ -14,24 +14,3 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-import unittest
-
-from unittest import mock, skip
-
-from buck import tox_hooks
-
-
-class TestTox(unittest.TestCase):
-    def setUp(self):
-        self.config = mock.MagicMock()
-
-    @skip("TODO!")
-    def test_get_reader(self):
-        tox = tox_hooks.Tox(self.config)
-        tox.get_reader('tox')
-
-    @skip("TODO!")
-    def test_add_envconfigs(self):
-        tox = tox_hooks.Tox(self.config)
-        tox.add_envconfigs([])

@@ -676,7 +676,8 @@ register_mapping(
     selectors=(any_category,
                master_branch,
                k8s_charm),
-    env_list=(k8s_build,
+    env_list=(k8s_testenv,
+              k8s_build,
               k8s_pep8,
               k8s_fmt,
               k8s_cover)

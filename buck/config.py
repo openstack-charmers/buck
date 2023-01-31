@@ -20,6 +20,7 @@ from typing import (
     Callable,
     cast,
     Dict,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -27,7 +28,6 @@ from typing import (
     TypeVar,
     Union,
 )
-from collections.abc import Iterable
 from collections import OrderedDict
 from dataclasses import dataclass
 from functools import partial

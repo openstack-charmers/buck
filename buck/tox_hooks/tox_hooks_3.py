@@ -26,7 +26,6 @@ from buck.config import (
     EnvValuesType,
     use_buck_config,
 )
-from buck.defaults.buckini import buck_ini_kv
 
 
 def tox_configure(config: Config) -> None:
@@ -78,6 +77,8 @@ def get_buck_config(config: Config) -> List[Tuple[str, str]]:
     try:
         config_keys = list(config._cfg.sections['buck'].items())  # type:ignore
     except KeyError:
+        # only import here if needed
+        from buck.defaults.buckini import buck_ini_kv
         config_keys = list(buck_ini_kv.items())
     return config_keys
 

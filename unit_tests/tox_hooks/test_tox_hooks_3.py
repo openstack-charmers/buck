@@ -18,11 +18,9 @@
 import importlib
 import sys
 from unittest import mock
-from dataclasses import dataclass
-from typing import Any, Dict
 from types import ModuleType
 
-from ..utils import BaseTestCase
+from ..utils import ModuleMockerTestCase
 
 # unit under test is dynamically loaded in the test as it pulls in the 'tox'
 # module which has to be mocked as a module.
@@ -48,13 +46,7 @@ TESTENV_PY3 = dict(
 )
 
 
-@dataclass
-class MockedModule:
-    saved_module: Any
-    mock: mock.MagicMock
-
-
-class TestPluginHook(BaseTestCase):
+class TestPluginHook(ModuleMockerTestCase):
 
     SAVE_MODULES = (
         'tox',
@@ -62,24 +54,11 @@ class TestPluginHook(BaseTestCase):
     )
 
     def setUp(self):
-        self._saved_modules: Dict[str, MockedModule] = {}
-        for module in self.SAVE_MODULES:
-            self._saved_modules[module] = MockedModule(
-                sys.modules.get(module, None),
-                mock.MagicMock())
-            sys.modules[module] = self._saved_modules[module].mock
+        super().setUp()
         self.tox_hooks_3: ModuleType = importlib.import_module(
             'buck.tox_hooks.tox_hooks_3')
-        # self.tox_hooks_3.Config = mock.MagicMock()
-        super().setUp()
 
     def tearDown(self):
-        for module, dc in self._saved_modules.items():
-            if dc.saved_module is not None:
-                sys.modules[module] = dc.saved_module
-            else:
-                del sys.modules[module]
-        self._saved_modules = {}
         self.tox_hooks_3 = None  # type:ignore
         del sys.modules['buck.tox_hooks.tox_hooks_3']
         super().tearDown()

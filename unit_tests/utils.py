@@ -18,10 +18,14 @@
 """Module to provide helper for writing unit tests."""
 
 import contextlib
+from dataclasses import dataclass
+import importlib
 import io
+import sys
+from typing import Any, Dict
+from types import ModuleType
 from unittest import mock
 import unittest
-
 
 @contextlib.contextmanager
 def patch_open():
@@ -99,3 +103,37 @@ class BaseTestCase(unittest.TestCase):
             started.return_value = return_value
         self._patches_start[name] = started
         setattr(self, name, started)
+
+
+@dataclass
+class MockedModule:
+    saved_module: Any
+    mock: mock.MagicMock
+
+
+class ModuleMockerTestCase(BaseTestCase):
+
+    # override this in derived classes
+    SAVE_MODULES = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._saved_modules: Dict[str, MockedModule] = {}
+
+    def setUp(self):
+        for module in self.SAVE_MODULES:
+            self._saved_modules[module] = MockedModule(
+                sys.modules.get(module, None),
+                mock.MagicMock())
+            sys.modules[module] = self._saved_modules[module].mock
+        super().setUp()
+
+    def tearDown(self):
+        for module, dc in self._saved_modules.items():
+            if dc.saved_module is not None:
+                sys.modules[module] = dc.saved_module
+            else:
+                del sys.modules[module]
+        self._saved_modules = {}
+        self.tox_hooks_3 = None  # type:ignore
+        super().tearDown()

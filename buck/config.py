@@ -482,7 +482,7 @@ T = TypeVar('T')
 def env_resolver(envs: List[Env],
                  env: Env,
                  key: str,
-                 return_type: type[T],
+                 return_type: Type[T],
                  visited_envs: Optional[List[str]] = None
                  ) -> Optional[T]:
     """Resolve a `key` in `env` to it's value.
@@ -562,7 +562,7 @@ def env_resolver(envs: List[Env],
 def _resolve_env_value(
     envs: List[Env],
     value: EnvValuesType,
-    return_type: type[T],
+    return_type: Type[T],
     visited: List[str],
 ) -> Optional[T]:
     if isinstance(value, str):

@@ -46,7 +46,7 @@ TESTENV_PY3 = dict(
 )
 
 
-class TestPluginHook(ModuleMockerTestCase):
+class TestPluginHook3(ModuleMockerTestCase):
 
     SAVE_MODULES = (
         'tox',

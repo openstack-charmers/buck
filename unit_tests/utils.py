@@ -19,13 +19,12 @@
 
 import contextlib
 from dataclasses import dataclass
-import importlib
 import io
 import sys
 from typing import Any, Dict
-from types import ModuleType
 from unittest import mock
 import unittest
+
 
 @contextlib.contextmanager
 def patch_open():

@@ -19,8 +19,6 @@ import configparser
 import importlib
 import sys
 from unittest import mock
-from dataclasses import dataclass
-from typing import Any, Dict
 from types import ModuleType
 
 from ..utils import ModuleMockerTestCase
@@ -80,7 +78,7 @@ class TestPluginHook4(ModuleMockerTestCase):
     def test_tox_add_core_config_default(self):
         mock_state = mock.MagicMock()
         mock_parser = mock.Mock()
-        
+
         def items_fail(section):
             raise configparser.NoSectionError(section)
 
@@ -111,14 +109,14 @@ class TestPluginHook4(ModuleMockerTestCase):
         mock_parser.set.assert_has_calls([
             mock.call('testenv', 'basepython', 'python3'),
             mock.call('testenv', 'passenv',
-                 ('HOME', 'https', 'http', 'no_proxy', 'TEST_*')),
+                      ('HOME', 'https', 'http', 'no_proxy', 'TEST_*')),
             mock.call('testenv', 'deps', ('dep1', 'dep2')),
             mock.call('testenv:py3', 'commands', 'run-the-test')])
 
     def test_tox_add_core_config_supply_config(self):
         mock_state = mock.MagicMock()
         mock_parser = mock.Mock()
-        
+
         mock_parser.items.return_value = list(TEST_BUCK_CONFIG2.items())
 
         mock_state.conf._src._parser = mock_parser
@@ -144,7 +142,6 @@ class TestPluginHook4(ModuleMockerTestCase):
         mock_parser.set.assert_has_calls([
             mock.call('testenv', 'basepython', 'python3'),
             mock.call('testenv', 'passenv',
-                 ('HOME', 'https', 'http', 'no_proxy', 'TEST_*')),
+                      ('HOME', 'https', 'http', 'no_proxy', 'TEST_*')),
             mock.call('testenv', 'deps', ('dep1', 'dep2')),
             mock.call('testenv:py3', 'commands', 'run-the-test')])
-

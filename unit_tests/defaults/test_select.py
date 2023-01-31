@@ -24,7 +24,7 @@ import buck.defaults.select as select
 import buck.utils
 
 
-class TestTox(BaseTestCase):
+class TestSelect(BaseTestCase):
 
     def test_determine_category_is_k8s(self):
         self.patch_object(buck.utils, 'is_k8s_charm', return_value=True)

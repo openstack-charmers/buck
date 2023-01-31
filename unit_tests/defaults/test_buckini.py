@@ -23,7 +23,7 @@ import importlib
 import buck.defaults.buckini as buckini
 
 
-class TestTox(unittest.TestCase):
+class TestBuckini(unittest.TestCase):
 
     def test_buckini_kv_is_valid(self):
         kv = buckini.buck_ini_kv

@@ -28,7 +28,7 @@ import buck.config as buck_config
 import buck.defaults.config  # noqa
 
 
-class TestTox(unittest.TestCase):
+class TestConfig(unittest.TestCase):
 
     def test_testenv_sanity(self):
         mappings = buck_config.mappings

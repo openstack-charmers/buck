@@ -16,9 +16,6 @@ from buck.config import (
     use_buck_config,
     validate_env_vars,
 )
-from buck.defaults.buckini import buck_ini_kv
-
-# ## Tox hook functions as called from buck.tox_hooks.plugin_hook:
 
 
 # These are the tox 4 hooks to configure the virtual tox.ini
@@ -41,6 +38,8 @@ def tox_add_core_config(core_conf: EnvConfigSet, state: State) -> None:
     try:
         config_keys = p.items('buck')
     except configparser.NoSectionError:
+        # only import here if needed
+        from buck.defaults.buckini import buck_ini_kv
         config_keys = list(buck_ini_kv.items())
     # get the envs from the items
     resolved_selectors, envs = use_buck_config(config_keys)

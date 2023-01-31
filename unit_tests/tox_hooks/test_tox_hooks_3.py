@@ -28,11 +28,6 @@ from ..utils import BaseTestCase
 # module which has to be mocked as a module.
 
 
-class MockableConfig:
-    """A mockable class to provide config to the tox 3 tox_configure fn."""
-    pass
-
-
 TEST_BUCK_CONFIG = dict(
     lookup="category",
     category="string:this",

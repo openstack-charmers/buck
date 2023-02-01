@@ -134,5 +134,4 @@ class ModuleMockerTestCase(BaseTestCase):
             else:
                 del sys.modules[module]
         self._saved_modules = {}
-        self.tox_hooks_3 = None  # type:ignore
         super().tearDown()

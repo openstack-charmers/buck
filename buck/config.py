@@ -17,6 +17,7 @@
 
 
 from typing import (
+    Any,
     Callable,
     cast,
     Dict,
@@ -37,13 +38,13 @@ import re
 
 # Type definitions
 EnvValuesType = Union[str, Iterable[str], bool]
-Env = Dict[str, Dict[str, EnvValuesType]]
+Env = Dict[str, EnvValuesType]
 Selectors = Dict[str, Callable]
 Mappings = Dict[str, 'Mapping']  # note forward reference.
 
 
 # Module vars to hold registered envs and selectors
-envs: Optional[Env] = None
+envs: Optional[Dict[str, Env]] = None
 selectors: Optional[Selectors] = None
 mappings: Optional[Mappings] = None
 
@@ -63,16 +64,15 @@ class SelectionError(Exception):
     pass
 
 
-class default:
+class Default:
     """Type to indicate default unambiguously."""
     _name = ":default:"
 
-    @classmethod
-    def __eq__(cls, other: Union[str, 'default', Type[object]]) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, str):
-            return cls._name == other
+            return self._name == other
         try:
-            return cls._name == other._name  # type: ignore
+            return self._name == other._name  # type: ignore
         except AttributeError:
             return False
 
@@ -83,7 +83,10 @@ class default:
         return "default"
 
 
-def get_envs_singleton() -> Env:
+default = Default()
+
+
+def get_envs_singleton() -> Dict[str, Env]:
     """Return the ENVS singleton."""
     global envs
     if envs is None:
@@ -112,6 +115,9 @@ def validate_env_vars(**data: EnvValuesType) -> Dict[str, str]:
     the type is detected and then converted to a string.  Any iterables are
     assummed to be joined by a newline.
 
+    Note that if the data keys include 'pass_env' or 'set_env' then they are
+    rationalised to 'passenv' and 'setenv'; they must not be duplicated.
+
     :param data: the key, values that make up the an env.
     :raises: TypeError if the value doesn't conform to the valid type.
     :raises: KeyError on an unknown key.
@@ -120,20 +126,32 @@ def validate_env_vars(**data: EnvValuesType) -> Dict[str, str]:
         env_name=is_str,
         description=is_str,
         setenv=partial(is_str_or_iterable_str, ', '),
-        set_env=partial(is_str_or_iterable_str, ', '),
         commands=partial(is_str_or_iterable_str, "\n"),
         allowlist_externals=partial(is_str_or_iterable_str, ', '),
         passenv=partial(is_str_or_iterable_str, ', '),
-        pass_env=partial(is_str_or_iterable_str, ', '),
         deps=partial(is_str_or_iterable_str, "\n"),
         basepython=is_str,
         platform=is_str,
-        parrallel_show_output=is_bool,
+        parallel_show_output=is_bool,
         recreate=is_bool,
         skip_install=is_bool,
         labels=partial(is_str_or_iterable_str, ', '),
     )
     mapped_data = {}
+
+    # pass_env is an alias for passenv, and set_env is an alias for, so make
+    # sure both of each are not valid.
+    env_keys = data.keys()
+    if 'pass_env' in env_keys and 'passenv' in env_keys:
+        raise ParameterError("Can't have both 'pass_env' and 'passenv'")
+    if 'set_env' in env_keys and 'setenv' in env_keys:
+        raise ParameterError("Can't have both 'set_env' and 'setenv'")
+    if 'pass_env' in env_keys:
+        data['passenv'] = data['pass_env']
+        del data['pass_env']
+    if 'set_env' in env_keys:
+        data['setenv'] = data['set_env']
+        del data['set_env']
 
     for k, v in data.items():
         try:
@@ -175,6 +193,12 @@ def register_env_section(name: str, **data: EnvValuesType) -> str:
     # Just check at this point that the data is okay; it is transformed later
     # depending on whether it tis Tox 3 or Tox 4.
     validate_env_vars(**data)
+    if 'pass_env' in data.keys():
+        data['passenv'] = data['pass_env']
+        del data['pass_env']
+    if 'set_env' in data.keys():
+        data['setenv'] = data['set_env']
+        del data['set_env']
     envs = get_envs_singleton()
     if name in envs:
         raise DuplicateKeyError(f"env identifier '{name}' is duplicated.")
@@ -192,9 +216,9 @@ class SelectorMatcher:
     anything.  However, if it's default it must be the only item in the list.
     """
 
-    def __init__(self, category: str, *matches: Union[str, default]):
+    def __init__(self, category: str, *matches: Union[str, Default]):
         self.category: str = category
-        self.matches: List[Union[str, default]] = list(matches)
+        self.matches: List[Union[str, Default]] = list(matches)
         self._is_default = False
         if default in matches:
             if len(matches) != 1:
@@ -203,7 +227,7 @@ class SelectorMatcher:
                     "unique in the list.")
             self._is_default = True
 
-    def __call__(self, category: str, to_match: str):
+    def __call__(self, category: str, to_match: Union[str, Default]):
         """See if the matcher matches."""
         return (category == self.category and
                 (self.is_default or to_match in self.matches))
@@ -215,7 +239,16 @@ class SelectorMatcher:
 
 def selector_matcher_factory(category: str
                              ) -> Callable[..., SelectorMatcher]:
-    def _selector_matcher_factory(*matches: Union[str, default]
+    """Return a callable that returns a SelectorMatcher
+
+    The callable takes a list of matches and creates a SelectorMatcher that
+    matches against the category provided to this function.
+
+    :param category: the category that will be matched against.
+    :returns: A callable that, when given a list of matches, provides a
+        SelectorMatcher against that category.
+    """
+    def _selector_matcher_factory(*matches: Union[str, Default]
                                   ) -> SelectorMatcher:
         """Returns callable matcher for a string.
 
@@ -256,14 +289,22 @@ class Mapping:
     def match(self, criteria: Dict[str, str]) -> bool:
         """Match criteria to the selectors and return whether it's a match.
 
+        if a criteria is missing from self.selectors, then it and that selector
+        is a default then it passes.
+
         :param criteria: dict of category -> matcher for matching.
         :returns: True if the criteria matched.
         """
-        try:
-            return all(s(s.category, criteria[s.category])
-                       for s in self.selectors)
-        except KeyError:
-            return False
+        for selector in self.selectors:
+            try:
+                if (selector.is_default or
+                        selector(selector.category,
+                                 criteria[selector.category])):
+                    continue
+                return False
+            except KeyError:
+                return False
+        return True
 
 
 def register_mapping(name: str,
@@ -331,13 +372,12 @@ def register_mapping(name: str,
     return mappings[name]
 
 
-def resolve_envs_by_selectors(criteria: Dict[str, Union[str, str]]
-                              ) -> List[Env]:
+def resolve_envs_by_selectors(criteria: Dict[str, str]) -> List[Env]:
     """Resolves a dictionary of selectors into a list of envs.
 
-    The criteria are is a dictionary of category:match_item to pick a set of
+    The criteria is a dictionary of category:match_item to pick a set of
     selectors from the mappings.  The mappings may have a default. If a
-    category is missing from a mapping, then then mapping criteria is less
+    category is missing from a mapping, then the mapping criteria is less
     specific than the criteria provided; in this case it is attempted later.
     So the criteria is sorted from most specific to least specific and then
     tested to get the appropriate set of envs.
@@ -354,9 +394,11 @@ def resolve_envs_by_selectors(criteria: Dict[str, Union[str, str]]
     criteria_keys = list(criteria.keys())
     num_criteria = len(criteria_keys)
     for mapping in mappings.values():
-        if len(mapping.selectors) <= num_criteria:
-            if set(s.category
-                   for s in mapping.selectors).issubset(criteria_keys):
+        # if any selectors are defaults, filter them out for selecting mappings
+        # to match against.
+        selectors = [s for s in mapping.selectors if not s.is_default]
+        if len(selectors) <= num_criteria:
+            if set(s.category for s in selectors).issubset(criteria_keys):
                 filtered_mappings.append(mapping)
 
     # sort by length, with a default being lower than one of the same length.
@@ -405,6 +447,8 @@ def use_buck_config(config_list: List[Tuple[str, str]]
     :param config_list: key, value pairs that define the loading of the config.
     :raises: AttributeError if any of the config data doesn't map to keys.
     :raises: AssertionError if the config isn't correct.
+    :raises: KeyError if a selector in lookup doesn't exist in the rest of the
+        config.
     :raises: Exception for other, unhandled, issues.
     :returns: a tuple of (resolved selectors as a dictionary,
                           envs as lis of Env objects)
@@ -435,7 +479,7 @@ def resolve_function(fn: str) -> Callable:
     The dotted string is a list of modules, with the final one being the
     function.  It is always assumed to be an absolute module definition.
 
-    :param fn: the dotting string ultately being a module.
+    :param fn: the dotting string ultimately being a module.function
     :returns: the Callable function.
     """
     parts = fn.strip().split('.')
@@ -515,6 +559,11 @@ def env_resolver(envs: List[Env],
             f"Circular dependency on resolving a value: "
             f"{'->'.join(visited_envs)}")
     visited_envs.append(env_name)
+    # rationalise pass_env -> passenv and set_env -> setenv
+    if key == "pass_env":
+        key = "passenv"
+    if key == "set_env":
+        key = "setenv"
     try:
         value = env[key]
     except KeyError:

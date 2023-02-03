@@ -34,8 +34,13 @@ class TestUtils(ModuleMockerTestCase):
 
     def setUp(self):
         super().setUp()
-        self.patch('functools.cache', name='_functools_cache',
-                   new=lambda x: x)
+        # python3.8 doesn't have cache, so use lru_cache if cache fails.
+        try:
+            self.patch('functools.cache', name='_functools_cache',
+                       new=lambda x: x)
+        except AttributeError:
+            self.patch('functools.lru_cache', name='_functools_cache',
+                       new=lambda x: x)
         self.buck_utils = self._reload_module('buck.utils')
 
     @staticmethod

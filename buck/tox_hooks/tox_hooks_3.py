@@ -29,7 +29,7 @@ from buck.config import (
 
 
 def tox_configure(config: Config) -> None:
-    """Main hook for tox < 3
+    """Main hook for tox < 4
 
     Thsi configures tox with a list of environments depending on what the
     underlying charm is.

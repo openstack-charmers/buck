@@ -55,6 +55,20 @@ from buck.config import (
 
 from typing import Tuple
 
+###
+#
+# Handy constants
+#
+###
+
+GLOBAL_CONFIG: str = (
+    "https://raw.githubusercontent.com/openstack-charmers/release-tools"
+    "/master/global")
+ZOT_CLASSIC_TEST_REQUIREMENTS_TXT: str = (
+    f"-r{GLOBAL_CONFIG}/classic-zaza/test-requirements.txt")
+ZOT_REACTIVE_TEST_REQUIREMENTS_TXT: str = (
+    f"-r{GLOBAL_CONFIG}/source-zaza/src/test-requirements.txt")
+
 
 ###
 #
@@ -94,8 +108,7 @@ classic_build = register_env_section(
               'charmcraft -v pack',
               '{toxinidir}/rename.sh',
               'charmcraft clean'),
-    deps=("-rhttps://raw.githubusercontent.com/ajkavanagh/release-tools/"
-          "add-bases-to-lp-config/global/classic-zaza/build-requirements.txt"),
+    deps=f"{GLOBAL_CONFIG}/classic-zaza/build-requirements.txt",
 )
 
 
@@ -115,16 +128,10 @@ classic_sync_build = register_env_section(
               'charmcraft -v pack',
               '{toxinidir}/rename.sh',
               'charmcraft clean'),
-    deps=("-rhttps://raw.githubusercontent.com/ajkavanagh/release-tools/"
-          "add-bases-to-lp-config/global/classic-zaza/build-requirements.txt"),
+    deps=f"{GLOBAL_CONFIG}/classic-zaza/build-requirements.txt",
     allowlist_externals=('{[testenv]allowlist_externals}',
                          'make'),
 )
-
-
-deps_classic_functional_tests: str = (
-    "-rhttps://raw.githubusercontent.com/openstack-charmers/"
-    "release-tools/master/global/classic-zaza/test-requirements.txt")
 
 
 classic_py3 = register_env_section(
@@ -132,17 +139,17 @@ classic_py3 = register_env_section(
     env_name='testenv:py3',
     basepython='python3',
     deps=('-r{toxinidir}/requirements.txt',
-          deps_classic_functional_tests)
+          ZOT_CLASSIC_TEST_REQUIREMENTS_TXT)
 )
 
 
 classic_py3_keystone_test = register_env_section(
     name='classic_py3_keystone_test',
-    description="Custome py3 testenv that uses local test-requirements.txt",
+    description="Custom py3 testenv that uses local test-requirements.txt",
     env_name='testenv:py3',
     basepython='python3',
     deps=('-r{toxinidir}/requirements.txt',
-          deps_classic_functional_tests)
+          ZOT_CLASSIC_TEST_REQUIREMENTS_TXT)
 )
 
 
@@ -151,7 +158,7 @@ classic_py310 = register_env_section(
     env_name='testenv:py310',
     basepython='python3.10',
     deps=('-r{toxinidir}/requirements.txt',
-          deps_classic_functional_tests)
+          ZOT_CLASSIC_TEST_REQUIREMENTS_TXT)
 )
 
 
@@ -183,10 +190,11 @@ classic_cover = register_env_section(
               'coverage xml -o cover/coverage.xml',
               'coverage report'),
     deps=('-r{toxinidir}/requirements.txt',
-          deps_classic_functional_tests)
+          ZOT_CLASSIC_TEST_REQUIREMENTS_TXT)
 )
 
 
+# This may not work with Tox 4.
 classic_venv = register_env_section(
     name='classic_venv',
     env_name='testenv:venv',
@@ -200,7 +208,7 @@ classic_func_noop = register_env_section(
     env_name='testenv:func-noop',
     basepython='python3',
     commands='functest-run-suite --help',
-    deps=deps_classic_functional_tests,
+    deps=ZOT_CLASSIC_TEST_REQUIREMENTS_TXT,
 )
 
 
@@ -209,7 +217,7 @@ classic_func = register_env_section(
     env_name='testenv:func',
     basepython='python3',
     commands='functest-run-suite --keep-model',
-    deps=deps_classic_functional_tests,
+    deps=ZOT_CLASSIC_TEST_REQUIREMENTS_TXT,
 )
 
 
@@ -218,7 +226,7 @@ classic_func_smoke = register_env_section(
     env_name='testenv:func-smoke',
     basepython='python3',
     commands='functest-run-suite --keep-model --smoke',
-    deps=deps_classic_functional_tests,
+    deps=ZOT_CLASSIC_TEST_REQUIREMENTS_TXT,
 )
 
 
@@ -227,7 +235,7 @@ classic_func_dev = register_env_section(
     env_name='testenv:func-dev',
     basepython='python3',
     commands='functest-run-suite --keep-model --dev',
-    deps=deps_classic_functional_tests,
+    deps=ZOT_CLASSIC_TEST_REQUIREMENTS_TXT,
 )
 
 
@@ -236,7 +244,7 @@ classic_func_target = register_env_section(
     env_name='testenv:func-target',
     basepython='python3',
     commands='functest-run-suite --keep-model --bundle {posargs}',
-    deps=deps_classic_functional_tests,
+    deps=ZOT_CLASSIC_TEST_REQUIREMENTS_TXT,
 )
 
 
@@ -398,13 +406,7 @@ source_venv = register_env_section(
 )
 
 
-deps_reactive_functional_tests: str = (
-    "-rhttps://raw.githubusercontent.com/openstack-charmers/"
-    "release-tools/master/global/source-zaza/src/"
-    "test-requirements.txt")
-
-
-passenv_reactive_functional_tests: Tuple[str, ...] = (
+PASSENV_FOR_REACTIVE_FUNCTIONAL_TESTS: Tuple[str, ...] = (
     '{[testenv]setenv}',
     'HOME',
     'TERM',
@@ -417,40 +419,40 @@ passenv_reactive_functional_tests: Tuple[str, ...] = (
 source_func = register_env_section(
     name='source_func',
     env_name='testenv:func',
-    passenv=passenv_reactive_functional_tests,
+    passenv=PASSENV_FOR_REACTIVE_FUNCTIONAL_TESTS,
     basepython='python3',
     commands='functest-run-suite --keep-model',
-    deps=deps_reactive_functional_tests,
+    deps=ZOT_REACTIVE_TEST_REQUIREMENTS_TXT,
 )
 
 
 source_func_smoke = register_env_section(
     name='source_func_smoke',
     env_name='testenv:func-smoke',
-    passenv=passenv_reactive_functional_tests,
+    passenv=PASSENV_FOR_REACTIVE_FUNCTIONAL_TESTS,
     basepython='python3',
     commands='functest-run-suite --keep-model --smoke',
-    deps=deps_reactive_functional_tests,
+    deps=ZOT_REACTIVE_TEST_REQUIREMENTS_TXT,
 )
 
 
 source_func_dev = register_env_section(
     name='source_func_dev',
     env_name='testenv:func-dev',
-    passenv=passenv_reactive_functional_tests,
+    passenv=PASSENV_FOR_REACTIVE_FUNCTIONAL_TESTS,
     basepython='python3',
     commands='functest-run-suite --keep-model --dev',
-    deps=deps_reactive_functional_tests,
+    deps=ZOT_REACTIVE_TEST_REQUIREMENTS_TXT,
 )
 
 
 source_func_target = register_env_section(
     name='source_func_target',
     env_name='testenv:func-target',
-    passenv=passenv_reactive_functional_tests,
+    passenv=PASSENV_FOR_REACTIVE_FUNCTIONAL_TESTS,
     basepython='python3',
     commands='functest-run-suite --keep-model --bundle {posargs}',
-    deps=deps_reactive_functional_tests,
+    deps=ZOT_REACTIVE_TEST_REQUIREMENTS_TXT,
 )
 
 
@@ -590,8 +592,8 @@ charm = register_selector_name('charm')
 # different categories
 openstack_category = category('openstack')
 any_category = category(default)
-ceph_category = category('openstack')
-ovn_category = category('openstack')
+ceph_category = category('ceph')
+ovn_category = category('ovn')
 
 # branches supported.
 master_branch = branch('master')

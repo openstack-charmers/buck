@@ -163,7 +163,6 @@ def validate_env_vars(**data: EnvValuesType) -> Dict[str, str]:
 
 
 def is_str_or_iterable_str(separator: str,
-                           # v: Union[str, Iterable[str]]) -> str:
                            v: EnvValuesType) -> str:
     if isinstance(v, str):
         return v
@@ -402,7 +401,6 @@ def resolve_envs_by_selectors(criteria: Dict[str, str]) -> List[Env]:
                 filtered_mappings.append(mapping)
 
     # sort by length, with a default being lower than one of the same length.
-    # Use a cmp function, as it's easier to reason about.
     def _key_mapping(k: Mapping) -> int:
         """Sort by length and then default.
 

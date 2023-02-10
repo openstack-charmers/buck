@@ -166,7 +166,7 @@ classic_py310 = register_env_section(
 )
 
 classic_py310_keystone_test = register_env_section(
-    name='classic_py310',
+    name='classic_py310_keystone_test',
     env_name='testenv:py310',
     basepython='python3.10',
     commands=(
@@ -209,7 +209,7 @@ classic_cover = register_env_section(
 )
 
 classic_cover_keystone_test = register_env_section(
-    name='classic_cover',
+    name='classic_cover_keystone_test',
     env_name='testenv:cover',
     setenv=('{[testenv]setenv}',
             'PYTHON=coverage run --branch --concurrency=multiprocessing '

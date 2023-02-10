@@ -148,6 +148,10 @@ classic_py3_keystone_test = register_env_section(
     description="Custom py3 testenv that uses local test-requirements.txt",
     env_name='testenv:py3',
     basepython='python3',
+    commands=(
+        'make sync',
+        'stestr run --slowest {posargs}',
+    ),
     deps=('-r{toxinidir}/requirements.txt',
           ZOT_CLASSIC_TEST_REQUIREMENTS_TXT)
 )
@@ -161,6 +165,17 @@ classic_py310 = register_env_section(
           ZOT_CLASSIC_TEST_REQUIREMENTS_TXT)
 )
 
+classic_py310_keystone_test = register_env_section(
+    name='classic_py310_keystone_test',
+    env_name='testenv:py310',
+    basepython='python3.10',
+    commands=(
+        'make sync',
+        'stestr run --slowest {posargs}',
+    ),
+    deps=('-r{toxinidir}/requirements.txt',
+          ZOT_CLASSIC_TEST_REQUIREMENTS_TXT)
+)
 
 classic_pep8 = register_env_section(
     name='classic_pep8',
@@ -185,6 +200,24 @@ classic_cover = register_env_section(
             '--omit=".tox/*,*/charmhelpers/*,unit_tests/*"'),
     commands=('coverage erase',
               'stestr run --slowest {posargs}',
+              'coverage combine',
+              'coverage html -d cover',
+              'coverage xml -o cover/coverage.xml',
+              'coverage report'),
+    deps=('-r{toxinidir}/requirements.txt',
+          ZOT_CLASSIC_TEST_REQUIREMENTS_TXT)
+)
+
+classic_cover_keystone_test = register_env_section(
+    name='classic_cover_keystone_test',
+    env_name='testenv:cover',
+    setenv=('{[testenv]setenv}',
+            'PYTHON=coverage run --branch --concurrency=multiprocessing '
+            '--parallel-mode --source=. '
+            '--omit=".tox/*,*/charmhelpers/*,unit_tests/*"'),
+    commands=('coverage erase',
+              'stestr run --slowest {posargs}',
+              'make sync',
               'coverage combine',
               'coverage html -d cover',
               'coverage xml -o cover/coverage.xml',
@@ -640,10 +673,10 @@ register_mapping(
                keystone_charm),
     env_list=(classic_testenv,
               classic_sync_build,
-              classic_py310,
+              classic_py310_keystone_test,
               classic_py3_keystone_test,
               classic_pep8,
-              classic_cover,
+              classic_cover_keystone_test,
               classic_venv,
               classic_func_noop,
               classic_func,
